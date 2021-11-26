@@ -1,1 +1,18 @@
-# space
+name: Development (test)
+
+on:
+  push
+
+jobs:
+  listS3:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+    steps:
+    - uses: chrislennon/action-aws-cli@v1.1
+    # All commands after this point have access to the AWS CLI
+    - run: aws s3 ls s3://pacman-main.com
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
