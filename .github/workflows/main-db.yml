@@ -6,6 +6,8 @@ on:
 jobs:
   listS3:
     runs-on: ubuntu-18.04
+    strategy:
+      max-parallel: 1
     steps:
     - uses: chrislennon/action-aws-cli@v1.1
     # All commands after this point have access to the AWS CLI
