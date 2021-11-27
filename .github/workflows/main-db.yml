@@ -14,8 +14,9 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 0
-    - name: Receiving packages and db
+    - name: Install aws
       uses: chrislennon/action-aws-cli@v1.1
+    - name: Receiving packages and db
       run: |
         for arch in aarch64 arm i686 x86_64; do
           aws s3 ls s3://pacman-main.com/$arch/output
