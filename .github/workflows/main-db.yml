@@ -5,7 +5,7 @@ on:
 
 jobs:
   update-db-main:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
     steps:
@@ -15,10 +15,11 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: Install aws
-      uses: chrislennon/action-aws-cli@v1.1
+      uses: aws-actions/configure-aws-credentials@v1
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
     - name: Receiving packages and db
       run: |
         for arch in aarch64 arm i686 x86_64; do
