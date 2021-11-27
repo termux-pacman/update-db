@@ -20,13 +20,17 @@ jobs:
       run: |
         cd main
         for arch in aarch64 arm i686 x86_64; do
-          echo "==> $arch"
           aws s3api get-object --bucket pacman-main.com --key $arch/main.db main.db.tar.gz
+          aws s3api get-object --bucket pacman-main.com --key $arch/main.files main.files.tar.gz
           ls
           for i in $(aws s3 ls s3://pacman-main.com/$arch/output/ --recursive | awk '{print $4}'); do
-            echo "->"
+            dir_sp=(${i//// })
+            file=${dir_sp[-1]}
+            aws s3api get-object --bucket pacman-main.com --key $i $file
+            ../repo-add.sh main.db.tar.gz $file
           done
           rm main.db.tar.gz
+          rm main.files.tar.gz
         done
       env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
