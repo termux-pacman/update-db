@@ -14,10 +14,13 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 0
+    - name: Install bsdtar
+      run: sudo apt-get install libarchive-tools
     - name: Install aws
       uses: chrislennon/action-aws-cli@v1.1
     - name: Receiving packages and db
       run: |
+        source func.sh
         cd main
         for arch in aarch64 arm i686 x86_64; do
           aws s3api get-object --bucket pacman-main.com --key $arch/main.db main.db.tar.gz
