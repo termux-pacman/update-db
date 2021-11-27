@@ -27,7 +27,7 @@ jobs:
             dir_sp=(${i//// })
             file=${dir_sp[-1]}
             aws s3api get-object --bucket pacman-main.com --key $i $file
-            repo-add.sh main.db.tar.gz $file
+            ./repo-add.sh main.db.tar.gz $file
           done
           rm main.db.tar.gz
           rm main.files.tar.gz
