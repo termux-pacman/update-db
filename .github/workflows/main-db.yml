@@ -21,7 +21,8 @@ jobs:
         cd main
         for arch in aarch64 arm i686 x86_64; do
           echo "==> $arch"
-          aws s3 sync s3://pacman-main.com/$arch/main.db ./main.db.tar.gz
+          aws s3 sync s3://pacman-main.com/$arch/main.db .
+          mv main.db main.db.tar.gz
           ls
           for i in $(aws s3 ls s3://pacman-main.com/$arch/output/ --recursive | awk '{print $4}'); do
             echo "->"
