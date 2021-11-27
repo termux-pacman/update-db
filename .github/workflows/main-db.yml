@@ -19,7 +19,7 @@ jobs:
     - name: Receiving packages and db
       run: |
         for arch in aarch64 arm i686 x86_64; do
-          aws s3 ls s3://pacman-main.com/$arch/output
+          aws s3 ls s3://pacman-main.com/$arch/
         done
       env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
