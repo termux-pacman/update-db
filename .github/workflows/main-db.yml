@@ -18,11 +18,15 @@ jobs:
       uses: chrislennon/action-aws-cli@v1.1
     - name: Receiving packages and db
       run: |
+        cd main
         for arch in aarch64 arm i686 x86_64; do
           echo "==> $arch"
+          aws s3 sync s3://pacman-main.com/$arch/main.db ./main.db.tar.gz
+          ls
           for i in $(aws s3 ls s3://pacman-main.com/$arch/output/ --recursive | awk '{print $4}'); do
-            echo "-> $i"
+            echo "->"
           done
+          rm main.db.tar.gz
         done
       env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
