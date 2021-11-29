@@ -24,7 +24,7 @@ jobs:
         bucket=pacman-main.com
         cd main
         for arch in aarch64 arm i686 x86_64; do
-          packages=$(aws-ls $arch/output/*.pkg.*)
+          packages=$(aws-ls $arch/output/ | grep .pkg.)
           if [[ -n $packages ]]; then
             for i in db files; do
               get-object $arch/main.$i main.$i.tar.gz
@@ -33,7 +33,7 @@ jobs:
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
               name=$(get_name $file)
-              for j in $(aws-ls $arch/$name*); do
+              for j in $(aws-ls $arch/ | grep $name); do
                 dir_sp2=(${j//// })
                 if [[ $name = $(get_name ${dir_sp2[-1]}) ]]; then
                   aws-rm $j
