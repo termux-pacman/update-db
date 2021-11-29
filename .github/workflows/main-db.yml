@@ -32,6 +32,14 @@ jobs:
             for i in $packages; do
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
+              name=$(get_name $file)
+              for j in $(aws-ls $arch/$name*); do
+                dir_sp2=(${j//// })
+                if [[ $name = $(get_name ${dir_sp2[-1]}) ]]; then
+                  aws-rm $j
+                  break
+                fi
+              done
               get-object $i $file
               aws-mv $i $arch/
               ./repo-add.sh main.db.tar.gz $file
