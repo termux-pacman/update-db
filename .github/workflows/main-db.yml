@@ -24,7 +24,7 @@ jobs:
         bucket=pacman-main.com
         cd main
         for arch in aarch64 arm i686 x86_64; do
-          packages=$(aws-ls $arch/output/)
+          packages=$(aws-ls $arch/output/*.pkg.*)
           if [[ -n $packages ]]; then
             for i in db files; do
               get-object $arch/main.$i main.$i.tar.gz
