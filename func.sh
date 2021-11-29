@@ -12,3 +12,19 @@ get_name() {
 	done
 	echo $name
 }
+
+get-object() {
+	aws s3api get-object --bucket $bucket --key $1 $2 >/dev/null 2>&1
+}
+
+put-object() {
+	aws s3api put-object --bucket $bucket --key $1 --body $2 >/dev/null 2>&1
+}
+
+aws-ls() {
+	aws s3 ls s3://$bucket/$1 --recursive | awk '{print $4}'
+}
+
+aws-mv() {
+	aws s3 mv s3://$bucket/$1 s3://$bucket/$2 >/dev/null 2>&1
+}
