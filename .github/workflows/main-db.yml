@@ -41,6 +41,7 @@ jobs:
             get-object $arch/main.$i main.$i.tar.gz
           done
           # Delete packages
+          echo "ok0"
           packages=$(aws-ls $arch/output/ | grep deleted_packages.txt)
           echo "ok1"
           if [[ -n $packages ]]; then
