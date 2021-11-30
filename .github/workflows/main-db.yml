@@ -18,7 +18,7 @@ jobs:
       run: sudo apt-get install libarchive-tools
     - name: Install aws
       uses: chrislennon/action-aws-cli@v1.1
-    - name: Receiving packages and db
+    - name: Update db
       run: |
         # Import func
         source func.sh
@@ -39,7 +39,7 @@ jobs:
           for i in db files; do
             get-object $arch/main.$i main.$i.tar.gz
           done
-          db_sum=$(sha256sum main.db)
+          db_sum=$(sha256sum main.db.tar.gz)
           # Delete packages
           packages=$(aws-ls $arch/output/deleted_packages.txt)
           if [[ -n $packages ]]; then
@@ -63,7 +63,7 @@ jobs:
             done
           fi
           # Upload db
-          if [[ $db_sum != $(sha256sum main.db) ]]; then
+          if [[ $db_sum != $(sha256sum main.db.tar.gz) ]]; then
             for i in db files; do
               put-object $arch/main.$i main.$i.tar.gz
             done
