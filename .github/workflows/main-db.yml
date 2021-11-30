@@ -21,9 +21,9 @@ jobs:
     - name: Update db
       run: |
         # Import func
-        echo "Import func"
         source func.sh
         bucket=pacman-main.com
+        upload=1
         del-pkg() {
           for j in $(aws-ls $arch/ | grep $1); do
             dir_sp2=(${j//// })
@@ -37,26 +37,23 @@ jobs:
         cd main
         for arch in aarch64 arm i686 x86_64; do
           # Get db
-          echo "Get db"
           for i in db files; do
             get-object $arch/main.$i main.$i.tar.gz
           done
-          db_sum=$(sha256sum main.db.tar.gz)
           # Delete packages
           packages=$(aws-ls $arch/output/deleted_packages.txt)
           if [[ -n $packages ]]; then
-            echo "Delete packages"
-            get-object $packages
+            get-object $packages deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i
               del-pkg $i
             done
             aws-rm $packages
+            upload=0
           fi
           # Update packages
           packages=$(aws-ls $arch/output/ | grep .pkg.)
           if [[ -n $packages ]]; then
-            echo "Update packages"
             for i in $packages; do
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
@@ -65,16 +62,15 @@ jobs:
               aws-mv $i $arch/
               ./repo-add.sh main.db.tar.gz $file
             done
+            upload=0
           fi
           # Upload db
-          echo "Upload db"
-          if [[ $db_sum != $(sha256sum main.db.tar.gz) ]]; then
+          if [[ $upload = 0 ]]; then
             for i in db files; do
               put-object $arch/main.$i main.$i.tar.gz
             done
           fi
           # Del db
-          echo "Del db"
           rm main.*
         done
       env:
