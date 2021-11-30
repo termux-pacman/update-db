@@ -14,11 +14,11 @@ get_name() {
 }
 
 get-object() {
-	aws s3api get-object --bucket $bucket --key $1 $2 >/dev/null 2>&1
+	aws s3api get-object --bucket $bucket --key $1 $2
 }
 
 put-object() {
-	aws s3api put-object --bucket $bucket --key $1 --body $2 >/dev/null 2>&1
+	aws s3api put-object --bucket $bucket --key $1 --body $2
 }
 
 aws-ls() {
