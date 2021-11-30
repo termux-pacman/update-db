@@ -20,35 +20,56 @@ jobs:
       uses: chrislennon/action-aws-cli@v1.1
     - name: Receiving packages and db
       run: |
+        # Import func
         source func.sh
         bucket=pacman-main.com
+        del-pkg() {
+          for j in $(aws-ls $arch/ | grep $1); do
+            dir_sp2=(${j//// })
+            if [[ $1 = $(get_name ${dir_sp2[-1]}) ]]; then
+              aws-rm $j
+              break
+            fi
+          done
+        }
+        # Go to
         cd main
         for arch in aarch64 arm i686 x86_64; do
+          # Get db
+          for i in db files; do
+            get-object $arch/main.$i main.$i.tar.gz
+          done
+          db_sum=$(sha256sum main.db)
+          # Delete packages
+          packages=$(aws-ls $arch/output/deleted_packages.txt)
+          if [[ -n $packages ]]; then
+            get-object $packages
+            for i in $(cat deleted_packages.txt); do
+              ./repo-remove.sh main.db.tar.gz $i
+              del-pkg $i
+            done
+            aws-rm $packages
+          fi
+          # Update packages
           packages=$(aws-ls $arch/output/ | grep .pkg.)
           if [[ -n $packages ]]; then
-            for i in db files; do
-              get-object $arch/main.$i main.$i.tar.gz
-            done
             for i in $packages; do
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
-              name=$(get_name $file)
-              for j in $(aws-ls $arch/ | grep $name); do
-                dir_sp2=(${j//// })
-                if [[ $name = $(get_name ${dir_sp2[-1]}) ]]; then
-                  aws-rm $j
-                  break
-                fi
-              done
+              del-pkg $(get_name $file)
               get-object $i $file
               aws-mv $i $arch/
               ./repo-add.sh main.db.tar.gz $file
             done
+          fi
+          # Upload db
+          if [[ $db_sum != $(sha256sum main.db) ]]; then
             for i in db files; do
               put-object $arch/main.$i main.$i.tar.gz
             done
-            rm main.*
           fi
+          # Del db
+          rm main.*
         done
       env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
