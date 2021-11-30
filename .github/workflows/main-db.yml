@@ -41,7 +41,7 @@ jobs:
             get-object $arch/main.$i main.$i.tar.gz
           done
           # Delete packages
-          packages=$(aws-ls $arch/output/deleted_packages.txt)
+          packages=$(aws-ls $arch/output/ | grep deleted_packages.txt)
           if [[ -n $packages ]]; then
             get-object $packages deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
