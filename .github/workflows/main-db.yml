@@ -42,7 +42,9 @@ jobs:
           done
           # Delete packages
           packages=$(aws-ls $arch/output/ | grep deleted_packages.txt)
+          echo "ok1"
           if [[ -n $packages ]]; then
+            echo "ok2"
             get-object $packages deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i
