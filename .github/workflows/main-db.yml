@@ -41,12 +41,11 @@ jobs:
             get-object $arch/main.$i main.$i.tar.gz
           done
           # Get packages
-          packages=$(aws-ls $arch/output/)
-          echo "ok"
+          dir=$(aws-ls $arch/output/)
           # Delete packages
-          packages=$(aws-ls $arch/output/ | grep deleted_packages.txt)
-          if [[ -n $packages ]]; then
-            get-object $packages deleted_packages.txt
+          files=$(echo $dir | grep deleted_packages.txt)
+          if [[ -n $files ]]; then
+            get-object $files deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i
               del-pkg $i
@@ -55,9 +54,9 @@ jobs:
             upload=0
           fi
           # Update packages
-          packages=$(aws-ls $arch/output/ | grep .pkg.)
-          if [[ -n $packages ]]; then
-            for i in $packages; do
+          files=$(echo $dir | grep .pkg.)
+          if [[ -n $files ]]; then
+            for i in $files; do
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
               del-pkg $(get_name $file)
