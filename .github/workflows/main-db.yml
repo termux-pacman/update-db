@@ -28,7 +28,6 @@ jobs:
           for j in $(aws-ls $arch/ $1); do
             dir_sp2=(${j//// })
             if [[ $1 = $(get_name ${dir_sp2[-1]}) ]]; then
-              echo $j
               aws-rm $j
               break
             fi
@@ -59,10 +58,9 @@ jobs:
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
               del-pkg $(get_name $file)
-              echo $i
               get-object $i $file
               ./repo-add.sh main.db.tar.gz $file
-              #aws-mv $i $arch/
+              aws-mv $i $arch/
             done
             upload=0
           fi

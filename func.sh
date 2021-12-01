@@ -22,7 +22,7 @@ put-object() {
 }
 
 aws-ls() {
-	aws s3 ls s3://$bucket/$1 --recursive | grep "$2" | awk '{print $4}'
+	aws s3 ls s3://$bucket/$1 | grep "$2" | awk '{print $4}'
 }
 
 aws-mv() {
