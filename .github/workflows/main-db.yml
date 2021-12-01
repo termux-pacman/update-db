@@ -58,8 +58,8 @@ jobs:
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
               del-pkg $(get_name $file)
+              echo $i
               get-object $i $file
-              ls
               ./repo-add.sh main.db.tar.gz $file
               #aws-mv $i $arch/
             done
