@@ -29,7 +29,6 @@ jobs:
             dir_sp2=(${j//// })
             if [[ $1 = $(get_name ${dir_sp2[-1]}) ]]; then
               aws-rm $j
-              echo ok
               break
             fi
           done
@@ -60,6 +59,7 @@ jobs:
               file=${dir_sp[-1]}
               del-pkg $(get_name $file)
               get-object $i $file
+              ls
               ./repo-add.sh main.db.tar.gz $file
               #aws-mv $i $arch/
             done
