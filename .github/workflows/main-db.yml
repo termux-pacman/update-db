@@ -43,7 +43,7 @@ jobs:
           # Get packages
           dir=$(aws-ls $arch/output/)
           # Delete packages
-          files=$(echo $dir | grep deleted_packages.txt)
+          files=$(echo $dir | { grep deleted_packages.txt || true; })
           if [[ -n $files ]]; then
             get-object $files deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
@@ -54,7 +54,7 @@ jobs:
             upload=0
           fi
           # Update packages
-          files=$(echo $dir | grep .pkg.)
+          files=$(echo $dir | { grep .pkg. || true; })
           if [[ -n $files ]]; then
             for i in $files; do
               dir_sp=(${i//// })
