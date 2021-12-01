@@ -22,9 +22,7 @@ put-object() {
 }
 
 aws-ls() {
-	for k in $(aws s3 ls s3://$bucket/$1 --recursive | awk '{print $4}'); do
-          echo $k
-        done
+	aws s3 ls s3://$bucket/$1 --recursive | grep "$2" | awk '{print $4}'
 }
 
 aws-mv() {
