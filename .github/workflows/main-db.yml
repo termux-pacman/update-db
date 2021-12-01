@@ -72,11 +72,12 @@ jobs:
             upload=0
           fi
           # Upload db
-          #if [[ $upload = 0 ]]; then
-          #  for i in db files; do
-          #    put-object $arch/main.$i main.$i.tar.gz
-          #  done
-          #fi
+          if [[ $upload = 0 ]]; then
+            for i in db files; do
+              #put-object $arch/main.$i main.$i.tar.gz
+              echo "--Upload--"
+            done
+          fi
           # Del db
           rm main.*
         done
