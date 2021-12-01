@@ -45,7 +45,6 @@ jobs:
           # Delete packages
           files=$(echo $dir | { grep deleted_packages.txt || true; })
           if [[ -n $files ]]; then
-            echo "Del"
             get-object $files deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i
@@ -57,7 +56,6 @@ jobs:
           # Update packages
           files=$(echo $dir | { grep .pkg. || true; })
           if [[ -n $files ]]; then
-            echo "Add"
             for i in $files; do
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
