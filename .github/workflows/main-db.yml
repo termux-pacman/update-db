@@ -28,6 +28,7 @@ jobs:
           for j in $(aws-ls $arch/ $1); do
             dir_sp2=(${j//// })
             if [[ $1 = $(get_name ${dir_sp2[-1]}) ]]; then
+              echo $j
               aws-rm $j
               break
             fi
