@@ -60,8 +60,8 @@ jobs:
               file=${dir_sp[-1]}
               del-pkg $(get_name $file)
               get-object $i $file
-              #aws-mv $i $arch/
               ./repo-add.sh main.db.tar.gz $file
+              #aws-mv $i $arch/
             done
             upload=0
           fi
