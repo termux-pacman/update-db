@@ -40,12 +40,12 @@ jobs:
           for i in db files; do
             get-object $arch/main.$i main.$i.tar.gz
           done
+          # Get packages
+          packages=$(aws-ls $arch/output/)
+          echo "ok"
           # Delete packages
-          echo "ok0"
           packages=$(aws-ls $arch/output/ | grep deleted_packages.txt)
-          echo "ok1"
           if [[ -n $packages ]]; then
-            echo "ok2"
             get-object $packages deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i
