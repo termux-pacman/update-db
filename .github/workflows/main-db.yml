@@ -25,11 +25,11 @@ jobs:
         bucket=pacman-main.com
         upload=1
         del-pkg() {
-          for j in $(aws-ls $arch/ | grep $1); do
+          for j in $(aws-ls $arch/ $1); do
             dir_sp2=(${j//// })
             if [[ $1 = $(get_name ${dir_sp2[-1]}) ]]; then
               echo $j
-              #aws-rm $j
+              aws-rm $j
               break
             fi
           done
@@ -49,20 +49,18 @@ jobs:
               ./repo-remove.sh main.db.tar.gz $i
               del-pkg $i
             done
-            #aws-rm $packages
+            aws-rm $files
             upload=0
           fi
           # Update packages
           files=$(aws-ls $arch/output/ .pkg.)
-          echo $files
           if [[ -n $files ]]; then
-            echo "Add"
             for i in $files; do
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
               del-pkg $(get_name $file)
               get-object $i $file
-              #aws-mv $i $arch/
+              aws-mv $i $arch/
               ./repo-add.sh main.db.tar.gz $file
             done
             upload=0
@@ -70,12 +68,13 @@ jobs:
           # Upload db
           if [[ $upload = 0 ]]; then
             for i in db files; do
-              #put-object $arch/main.$i main.$i.tar.gz
-              echo "--Upload--"
+              put-object $arch/main.$i main.$i.tar.gz
             done
           fi
-          # Del db
+          # Delete db on action
           rm main.*
+          # Delete packages on action
+          rm *.pkg.*
         done
       env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
