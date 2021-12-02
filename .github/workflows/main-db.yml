@@ -56,7 +56,7 @@ jobs:
             for i in $files; do
               del-pkg $(get_name $i)
               get-object $arch/output/$i $i
-              ./repo-add.sh main.db.tar.gz $file
+              ./repo-add.sh main.db.tar.gz $i
               aws-mv $arch/output/$i $arch/
             done
             upload=0
