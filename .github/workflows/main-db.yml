@@ -75,7 +75,7 @@ jobs:
           # Delete db on action
           rm main.*
           # Delete packages on action
-          rm *.pkg.*
+          rm -f *.pkg.*
         done
       env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
