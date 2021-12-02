@@ -28,6 +28,7 @@ jobs:
           for j in $(aws-ls $arch/ $1); do
             dir_sp2=(${j//// })
             if [[ $1 = $(get_name ${dir_sp2[-1]}) ]]; then
+              echo $j
               aws-rm $j
               break
             fi
@@ -55,6 +56,7 @@ jobs:
           files=$(aws-ls $arch/output/ .pkg.)
           if [[ -n $files ]]; then
             for i in $files; do
+              echo "--- $i ---"
               dir_sp=(${i//// })
               file=${dir_sp[-1]}
               del-pkg $(get_name $file)
