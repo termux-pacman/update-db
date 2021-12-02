@@ -26,10 +26,8 @@ jobs:
         upload=1
         del-pkg() {
           for j in $(aws-ls $arch/ $1); do
-            dir_sp2=(${j//// })
-            if [[ $1 = $(get_name ${dir_sp2[-1]}) ]]; then
-              echo $j
-              aws-rm $j
+            if [[ $1 = $(get_name $j) ]]; then
+              aws-rm $arch/$j
               break
             fi
           done
@@ -44,25 +42,22 @@ jobs:
           # Delete packages
           files=$(aws-ls $arch/output/ deleted_packages.txt)
           if [[ -n $files ]]; then
-            get-object $files deleted_packages.txt
+            get-object $arch/output/$files deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i
               del-pkg $i
             done
-            aws-rm $files
+            aws-rm $arch/output/$files
             upload=0
           fi
           # Update packages
           files=$(aws-ls $arch/output/ .pkg.)
           if [[ -n $files ]]; then
             for i in $files; do
-              echo "--- $i ---"
-              dir_sp=(${i//// })
-              file=${dir_sp[-1]}
-              del-pkg $(get_name $file)
-              get-object $i $file
+              del-pkg $(get_name $i)
+              get-object $arch/output/$i $i
               ./repo-add.sh main.db.tar.gz $file
-              aws-mv $i $arch/
+              aws-mv $arch/output/$i $arch/
             done
             upload=0
           fi
