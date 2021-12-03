@@ -275,7 +275,6 @@ db_write_entry() {
 	csize=$(wc -c < "$pkgfile")
 
 	# compute checksums
-	msg2 "$(gettext "Computing checksums...")"
 	md5sum=$(md5sum "$pkgfile")
 	md5sum=${md5sum%% *}
 	sha256sum=$(sha256sum "$pkgfile")
@@ -290,7 +289,6 @@ db_write_entry() {
 	pushd "$pkgname-$pkgver" >/dev/null
 
 	# create desc entry
-	msg2 "$(gettext "Creating '%s' db entry...")" 'desc'
 	{
 		format_entry "FILENAME"  "${1##*/}"
 		format_entry "NAME"      "$pkgname"
@@ -330,7 +328,6 @@ db_write_entry() {
 	cp -a "$tmpdir/db/$pkgname-$pkgver" "$tmpdir/files/$pkgname-$pkgver"
 
 	# create files file
-	msg2 "$(gettext "Creating '%s' db entry...")" 'files'
 	local files_path="$tmpdir/files/$pkgname-$pkgver/files"
 	echo "%FILES%" >"$files_path"
 	bsdtar --exclude='^.*' -tf "$pkgfile" | LC_ALL=C sort -u >>"$files_path"
