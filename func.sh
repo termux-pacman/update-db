@@ -26,7 +26,7 @@ aws-ls() {
 }
 
 aws-mv() {
-	aws s3 mv s3://$bucket/$1 s3://$bucket/$2 >/dev/null 2>&1
+	aws s3 --recursive mv s3://$bucket/$1 s3://$bucket/$2 >/dev/null 2>&1
 }
 
 aws-rm() {
