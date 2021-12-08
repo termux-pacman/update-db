@@ -14,7 +14,7 @@ get_name() {
 }
 
 get-object() {
-	aws s3api get-object --bucket $bucket --key "$(echo $1 | sed 's/+/ /g')" $2 >/dev/null 2>&1
+	aws s3api get-object --bucket $bucket --key $1 $2 >/dev/null 2>&1
 }
 
 put-object() {
