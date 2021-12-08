@@ -30,7 +30,7 @@ jobs:
         upload=1
         del-pkg() {
           for j in $(aws-ls $arch/ $1); do
-            if [[ $1 = $(echo $(get_name $j) | grep 's/+//g') ]]; then
+            if [[ $1 = $(echo $(get_name $j) | sed 's/+//g') ]]; then
               aws-rm $arch/$j
               break
             fi
@@ -40,14 +40,12 @@ jobs:
         cd main
         for arch in aarch64 arm i686 x86_64; do
           # Get db
-          echo Get db
           for i in db files; do
             get-object $arch/main.$i main.$i.tar.gz
           done
           # Delete packages
           files=$(aws-ls $arch/output/ deleted_packages.txt)
           if [[ -n $files ]]; then
-            echo "Delete packages $files" 
             get-object $arch/output/$files deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i || true
@@ -59,24 +57,18 @@ jobs:
           # Update packages
           files=$(aws-ls $arch/output/ .pkg.)
           if [[ -n $files ]]; then
-            echo "Update packages $files"
             for i in $files; do
               del-pkg $(get_name $i)
-              echo ok1
               get-object $arch/output/$i $i
-              echo ok2
               ./repo-add.sh main.db.tar.gz $i
-              aws-mv $arch/output/$i "$(echo "$arch/$i" | grep 's/+/ /g')"
-              echo ok3
+              aws-mv $arch/output/$i "$(echo "$arch/$i" | sed 's/+/ /g')"
             done
             upload=0
           fi
           # Upload db
           if [[ $upload = 0 ]]; then
-            echo "Upload db"
             for i in db files; do
               put-object $arch/main.$i main.$i.tar.gz
-              echo ok1
             done
           fi
           # Delete db on action
