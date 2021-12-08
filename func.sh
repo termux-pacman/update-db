@@ -18,7 +18,7 @@ get-object() {
 }
 
 put-object() {
-	aws s3api put-object --bucket $bucket --key "$(echo $1 | sed 's/+/ /g')" --body $2 >/dev/null 2>&1
+	aws s3api put-object --bucket $bucket --key $(echo $1 | sed 's/+//g') --body $2 >/dev/null 2>&1
 }
 
 aws-ls() {
@@ -30,5 +30,5 @@ aws-mv() {
 }
 
 aws-rm() {
-	aws s3 rm s3://$bucket/"$(echo $1 | sed 's/+/ /g')" >/dev/null 2>&1
+	aws s3 rm s3://$bucket/$(echo $1 | sed 's/+//g') >/dev/null 2>&1
 }
