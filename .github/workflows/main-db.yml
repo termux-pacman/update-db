@@ -60,7 +60,7 @@ jobs:
               del-pkg $(get_name $i)
               get-object $arch/output/$i $i
               ./repo-add.sh main.db.tar.gz $i
-              aws-mv $arch/output/$i $arch/
+              aws-mv $arch/output/$i $(echo "$arch/$i" | grep 's/+/ /g')
             done
             upload=0
           fi
