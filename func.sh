@@ -14,6 +14,8 @@ get_name() {
 }
 
 get-object() {
+	echo "$(echo $1 | grep 's/+/ /g')"
+	echo $2
 	aws s3api get-object --bucket $bucket --key "$(echo $1 | grep 's/+/ /g')" $2 #>/dev/null 2>&1
 }
 
