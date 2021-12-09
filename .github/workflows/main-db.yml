@@ -30,7 +30,7 @@ jobs:
         upload=1
         del-pkg() {
           for j in $(aws-ls $arch/ $1); do
-            if [[ $1 = $(echo $(get_name $j) | sed 's/+//g') ]]; then
+            if [[ $1 = $(echo $(get_name $j) | sed 's/+/0/g') ]]; then
               aws-rm $arch/$j
               break
             fi
@@ -49,7 +49,7 @@ jobs:
             get-object $arch/output/$files deleted_packages.txt
             for i in $(cat deleted_packages.txt); do
               ./repo-remove.sh main.db.tar.gz $i || true
-              del-pkg $i
+              del-pkg $(echo $i | sed 's/+/0/g')
             done
             aws-rm $arch/output/$files
             upload=0
@@ -58,10 +58,11 @@ jobs:
           files=$(aws-ls $arch/output/ .pkg.)
           if [[ -n $files ]]; then
             for i in $files; do
-              del-pkg $(get_name $i)
-              get-object $arch/output/$i $i
-              ./repo-add.sh main.db.tar.gz $i
-              aws-mv $arch/output/$i $(echo $arch/$i | sed 's/+//g')
+              i2=$(echo $i | sed 's/+/0/g')
+              del-pkg $(get_name $i2)
+              get-object $arch/output/$i $i2
+              ./repo-add.sh main.db.tar.gz $i2
+              aws-mv $arch/output/$i $arch/$i2
             done
             upload=0
           fi
