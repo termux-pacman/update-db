@@ -1,17 +1,19 @@
 name: Update db main
 
-# Version: 1.1
+# Version: 2.0
 
 on:
-  #push
-  schedule:
-    - cron:  '0 0-23 * * *'
+  push
+  #schedule:
+  #  - cron:  '0 0-23 * * *'
 
 jobs:
   update-db-main:
     runs-on: ubuntu-18.04
     strategy:
       max-parallel: 1
+      matrix:
+        target_arch: [aarch64, arm, i686, x86_64]
     steps:
     - name: Clone repository
       uses: actions/checkout@v2
@@ -29,54 +31,48 @@ jobs:
         bucket=pacman-main.com
         upload=1
         del-pkg() {
-          for j in $(aws-ls $arch/ $1); do
+          for j in $(aws-ls ${{ matrix.target_arch }}/ $1); do
             if [[ $1 = $(echo $(get_name $j) | sed 's/+/0/g') ]]; then
-              aws-rm $arch/$j
+              aws-rm ${{ matrix.target_arch }}/$j
               break
             fi
           done
         }
         # Go to
-        cd main
-        for arch in aarch64 arm i686 x86_64; do
-          # Get db
-          for i in db files; do
-            get-object $arch/main.$i main.$i.tar.gz
-          done
-          # Delete packages
-          files=$(aws-ls $arch/output/ deleted_packages.txt)
-          if [[ -n $files ]]; then
-            get-object $arch/output/$files deleted_packages.txt
-            for i in $(cat deleted_packages.txt); do
-              ./repo-remove.sh main.db.tar.gz $i || true
-              del-pkg $(echo $i | sed 's/+/0/g')
-            done
-            aws-rm $arch/output/$files
-            upload=0
-          fi
-          # Update packages
-          files=$(aws-ls $arch/output/ .pkg.)
-          if [[ -n $files ]]; then
-            for i in $files; do
-              i2=$(echo $i | sed 's/+/0/g')
-              del-pkg $(get_name $i2)
-              get-object $arch/output/$i $i2
-              ./repo-add.sh main.db.tar.gz $i2
-              aws-mv $arch/output/$i $arch/$i2
-            done
-            upload=0
-          fi
-          # Upload db
-          if [[ $upload = 0 ]]; then
-            for i in db files; do
-              put-object $arch/main.$i main.$i.tar.gz
-            done
-          fi
-          # Delete db on action
-          rm main.*
-          # Delete packages on action
-          rm -f *.pkg.*
+        cd main/${{ matrix.target_arch }}
+        # Get db
+        for i in db files; do
+          get-object ${{ matrix.target_arch }}/main.$i main.$i.tar.gz
         done
+        # Delete packages
+        files=$(aws-ls ${{ matrix.target_arch }}/output/ deleted_packages.txt)
+        if [[ -n $files ]]; then
+          get-object ${{ matrix.target_arch }}/output/$files deleted_packages.txt
+          for i in $(cat deleted_packages.txt); do
+            ./repo-remove.sh main.db.tar.gz $i || true
+            del-pkg $(echo $i | sed 's/+/0/g')
+          done
+          aws-rm ${{ matrix.target_arch }}/output/$files
+          upload=0
+        fi
+        # Update packages
+        files=$(aws-ls ${{ matrix.target_arch }}/output/ .pkg.)
+        if [[ -n $files ]]; then
+          for i in $files; do
+            i2=$(echo $i | sed 's/+/0/g')
+            del-pkg $(get_name $i2)
+            get-object ${{ matrix.target_arch }}/output/$i $i2
+            ./repo-add.sh main.db.tar.gz $i2
+            aws-mv ${{ matrix.target_arch }}/output/$i ${{ matrix.target_arch }}/$i2
+          done
+          upload=0
+        fi
+        # Upload db
+        if [[ $upload = 0 ]]; then
+          for i in db files; do
+            put-object ${{ matrix.target_arch }}/main.$i main.$i.tar.gz
+          done
+        fi
       env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
