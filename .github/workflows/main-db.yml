@@ -27,7 +27,7 @@ jobs:
       run: |
         # Import func
         source func.sh
-        bucket=pacman-main.com
+        bucket=termux-main.pacman
         upload=1
         del-pkg() {
           for j in $(aws-ls ${{ matrix.target_arch }}/ $1); do
