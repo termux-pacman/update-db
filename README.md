@@ -2,7 +2,7 @@
 The core of this repo is the steps to update db packages for pacman
 
 ### Service:
-main:  
+main:
 ```bash
 [main]
 Server = https://s3.amazonaws.com/termux-main.pacman/$arch
@@ -11,6 +11,11 @@ x11:
 ```bash
 [x11]
 Server = https://s3.amazonaws.com/termux-x11.pacman/$arch
+```
+root:
+```bash
+[root]
+Server = https://s3.amazonaws.com/termux-root.pacman/$arch
 ```
 
 ### List of action files:
