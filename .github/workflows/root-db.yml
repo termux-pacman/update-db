@@ -1,0 +1,78 @@
+name: Update db root
+
+# Version: 2.0
+
+on:
+  #push
+  schedule:
+    - cron:  '0 0-23 * * *'
+
+jobs:
+  update-db-root:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        target_arch: [aarch64, arm, i686, x86_64]
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+    - name: Install bsdtar
+      run: sudo apt-get install libarchive-tools
+    - name: Install aws
+      uses: chrislennon/action-aws-cli@v1.1
+    - name: Update db
+      run: |
+        # Import func
+        source func.sh
+        bucket=termux-root.pacman
+        upload=1
+        del-pkg() {
+          for j in $(aws-ls ${{ matrix.target_arch }}/ $1); do
+            if [[ $1 = $(echo $(get_name $j) | sed 's/+/0/g') ]]; then
+              aws-rm ${{ matrix.target_arch }}/$j
+              break
+            fi
+          done
+        }
+        # Go to
+        cd root/${{ matrix.target_arch }}
+        # Get db
+        for i in db files; do
+          get-object ${{ matrix.target_arch }}/root.$i root.$i.tar.gz
+        done
+        # Delete packages
+        files=$(aws-ls ${{ matrix.target_arch }}/output/ deleted_packages.txt)
+        if [[ -n $files ]]; then
+          get-object ${{ matrix.target_arch }}/output/$files deleted_packages.txt
+          for i in $(cat deleted_packages.txt); do
+            ./repo-remove.sh root.db.tar.gz $i || true
+            del-pkg $(echo $i | sed 's/+/0/g')
+          done
+          aws-rm ${{ matrix.target_arch }}/output/$files
+          upload=0
+        fi
+        # Update packages
+        files=$(aws-ls ${{ matrix.target_arch }}/output/ .pkg.)
+        if [[ -n $files ]]; then
+          for i in $files; do
+            i2=$(echo $i | sed 's/+/0/g')
+            del-pkg $(get_name $i2)
+            get-object ${{ matrix.target_arch }}/output/$i $i2
+            ./repo-add.sh root.db.tar.gz $i2
+            aws-mv ${{ matrix.target_arch }}/output/$i ${{ matrix.target_arch }}/$i2
+          done
+          upload=0
+        fi
+        # Upload db
+        if [[ $upload = 0 ]]; then
+          for i in db files; do
+            put-object ${{ matrix.target_arch }}/root.$i root.$i.tar.gz
+          done
+        fi
+      env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+

@@ -21,3 +21,4 @@ Server = https://s3.amazonaws.com/termux-root.pacman/$arch
 ### List of action files:
  - [main-db.yml](.github/workflows/main-db.yml)
  - [x11-db.yml](.github/workflows/x11-db.yml)
+ - [root-db.yml](.github/workflows/root-db.yml)
