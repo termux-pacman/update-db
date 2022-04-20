@@ -44,25 +44,25 @@ jobs:
           get-object ${{ matrix.target_arch }}/x11.$i x11.$i.tar.gz
         done
         # Delete packages
-        files=$(aws-ls ${{ matrix.target_arch }}/output/ deleted_packages.txt)
+        files=$(aws-ls ${{ matrix.target_arch }}/pkgs/ deleted_packages.txt)
         if [[ -n $files ]]; then
-          get-object ${{ matrix.target_arch }}/output/$files deleted_packages.txt
+          get-object ${{ matrix.target_arch }}/pkgs/$files deleted_packages.txt
           for i in $(cat deleted_packages.txt); do
             ./repo-remove.sh x11.db.tar.gz $i || true
             del-pkg $(echo $i | sed 's/+/0/g')
           done
-          aws-rm ${{ matrix.target_arch }}/output/$files
+          aws-rm ${{ matrix.target_arch }}/pkgs/$files
           upload=0
         fi
         # Update packages
-        files=$(aws-ls ${{ matrix.target_arch }}/output/ .pkg.)
+        files=$(aws-ls ${{ matrix.target_arch }}/pkgs/ .pkg.)
         if [[ -n $files ]]; then
           for i in $files; do
             i2=$(echo $i | sed 's/+/0/g')
             del-pkg $(get_name $i2)
-            get-object ${{ matrix.target_arch }}/output/$i $i2
+            get-object ${{ matrix.target_arch }}/pkgs/$i $i2
             ./repo-add.sh x11.db.tar.gz $i2
-            aws-mv ${{ matrix.target_arch }}/output/$i ${{ matrix.target_arch }}/$i2
+            aws-mv ${{ matrix.target_arch }}/pkgs/$i ${{ matrix.target_arch }}/$i2
           done
           upload=0
         fi
