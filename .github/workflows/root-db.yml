@@ -2,10 +2,10 @@ name: Update db root
 
 # Version: 2.0
 
-on:
-  #push
-  schedule:
-    - cron:  '0 0-23 * * *'
+#on:
+#  #push
+#  schedule:
+#    - cron:  '0 0-23 * * *'
 
 jobs:
   update-db-root:
