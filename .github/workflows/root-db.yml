@@ -1,15 +1,15 @@
 name: Update db root
 
-# Version: 2.0
+# Version: 2.1
 
-#on:
-#  #push
-#  schedule:
-#    - cron:  '0 0-23 * * *'
+on:
+  #push
+  schedule:
+    - cron:  '0 0-23 * * *'
 
 jobs:
   update-db-root:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target_arch: [aarch64, arm, i686, x86_64]
@@ -22,21 +22,15 @@ jobs:
     - name: Install bsdtar
       run: sudo apt-get install libarchive-tools
     - name: Install aws
-      uses: chrislennon/action-aws-cli@v1.1
+      run: |
+        git clone https://github.com/termux-pacman/aws-cli-action.git
+        ./aws-cli-action/setup.sh '${{ secrets.AWS_ACCESS_KEY_ID }}' '${{ secrets.AWS_ACCESS_KEY }}' '${{ secrets.AWS_REGION }}'
     - name: Update db
       run: |
         # Import func
-        source func.sh
+        source ./aws-cli-action/func.sh
         bucket=termux-root.pacman
         upload=1
-        del-pkg() {
-          for j in $(aws-ls ${{ matrix.target_arch }}/ $1); do
-            if [[ $1 = $(echo $(get_name $j) | sed 's/+/0/g') ]]; then
-              aws-rm ${{ matrix.target_arch }}/$j
-              break
-            fi
-          done
-        }
         # Go to
         cd root/${{ matrix.target_arch }}
         # Get db
