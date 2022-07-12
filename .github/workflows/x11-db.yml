@@ -1,11 +1,9 @@
 name: Update db x11
 
-# Version: 2.2
-
-on:
-  #push
-  schedule:
-   - cron:  '0,30 0-23 * * *'
+#on:
+#  #push
+#  schedule:
+#   - cron:  '0,30 0-23 * * *'
 
 jobs:
   update-db-x11:
