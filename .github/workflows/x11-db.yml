@@ -1,9 +1,9 @@
 name: Update db x11
 
-#on:
-#  #push
-#  schedule:
-#   - cron:  '0,30 0-23 * * *'
+on:
+  #push
+  schedule:
+   - cron:  '0,30 0-23 * * *'
 
 jobs:
   update-db-x11:
@@ -41,7 +41,7 @@ jobs:
           get-object ${{ matrix.target_arch }}/pkgs/$files deleted_packages.txt
           for i in $(cat deleted_packages.txt); do
             ./repo-remove.sh x11.db.tar.gz $i || true
-            del-pkg $(echo $i | sed 's/+/0/g')
+            del-all-pkg $(echo $i | sed 's/+/0/g')
           done
           aws-rm ${{ matrix.target_arch }}/pkgs/$files
           upload=0
@@ -51,7 +51,7 @@ jobs:
         if [[ -n $files ]]; then
           for i in $files; do
             i2=$(echo $i | sed 's/+/0/g')
-            del-pkg $(get_name $i2)
+            del-old-pkg $i
             get-object ${{ matrix.target_arch }}/pkgs/$i $i2
             ./repo-add.sh x11.db.tar.gz $i2
             aws-mv ${{ matrix.target_arch }}/pkgs/$i ${{ matrix.target_arch }}/$i2
