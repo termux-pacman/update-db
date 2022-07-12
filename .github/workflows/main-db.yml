@@ -28,6 +28,7 @@ jobs:
         # Import func
         source ./aws-cli-action/func.sh
         bucket=termux-main.pacman
+        arch=${{ matrix.target_arch }}
         upload=1
         # Go to
         cd main/${{ matrix.target_arch }}
