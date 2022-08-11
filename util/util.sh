@@ -22,8 +22,8 @@
 [[ -n "$LIBMAKEPKG_UTIL_UTIL_SH" ]] && return
 LIBMAKEPKG_UTIL_UTIL_SH=1
 
-source db/error.sh
-source db/message.sh
+source util/error.sh
+source util/message.sh
 
 ##
 #  usage : in_array( $needle, $haystack )

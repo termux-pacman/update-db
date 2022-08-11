@@ -21,7 +21,7 @@
 [[ -n "$LIBMAKEPKG_UTIL_PKGBUILD_SH" ]] && return
 LIBMAKEPKG_UTIL_PKGBUILD_SH=1
 
-source db/schema.sh
+source util/schema.sh
 
 
 have_function() {

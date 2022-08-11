@@ -21,8 +21,8 @@
 [[ -n "$LIBMAKEPKG_UTIL_COMPRESS_SH" ]] && return
 LIBMAKEPKG_UTIL_COMPRESS_SH=1
 
-source db/message.sh
-source db/pkgbuild.sh
+source util/message.sh
+source util/pkgbuild.sh
 
 
 # Wrapper around many stream compression formats, for use in the middle of a

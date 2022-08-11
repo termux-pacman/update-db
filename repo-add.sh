@@ -42,8 +42,8 @@ USE_COLOR='y'
 PREVENT_DOWNGRADE=0
 
 # Import libmakepkg
-source db/compress.sh
-source db/message.sh
+source util/compress.sh
+source util/message.sh
 
 # ensure we have a sane umask set
 umask 0022

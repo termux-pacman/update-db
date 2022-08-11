@@ -21,7 +21,7 @@
 [[ -n "$LIBMAKEPKG_SCHEMA_SH" ]] && return
 LIBMAKEPKG_SCHEMA_SH=1
 
-source db/util.sh
+source util/util.sh
 
 
 known_hash_algos=({ck,md5,sha{1,224,256,384,512},b2})
