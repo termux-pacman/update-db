@@ -6,22 +6,16 @@ repo="$1"
 bucket="termux-pacman.us"
 arch="$2"
 upload=false
-get_db_log=true
 
-# Func for getting dbs
-get_db() {
-  if $get_db_log; then
-    for format in db files; do
-      get-object $repo/$arch/$repo.$format $repo.$format.tar.gz
-      get-object $repo/$arch/$repo.$format.sig $repo.$format.tar.gz.sig
-      if ! $(gpg --verify $repo.$format.tar.gz.sig $repo.$format.tar.gz); then
-        echo "Eroor: with $repo.$format.tar.gz.sig"
-        exit 1
-      fi
-    done
-    get_db_log=false
+# Get and check dbs
+for format in db files; do
+  get-object $repo/$arch/$repo.$format $repo.$format.tar.gz
+  get-object $repo/$arch/$repo.$format.sig $repo.$format.tar.gz.sig
+  if ! $(gpg --verify $repo.$format.tar.gz.sig $repo.$format.tar.gz); then
+    echo "Eroor: with $repo.$format.tar.gz.sig"
+    exit 1
   fi
-}
+done
 
 # Get list of files
 files=$(aws s3api list-objects --bucket "${bucket}" --prefix "${repo}/${arch}/" | jq -r '.Contents[].Key')
@@ -33,7 +27,6 @@ if [[ -n $file_dp ]]; then
   get-object $file_dp $name_fdp
   get-object $file_dp.sig $name_fdp.sig
   if $(gpg --verify $name_fdp.sig $name_fdp); then
-    get_db
     for i in $(cat $name_fdp); do
       ./repo-remove.sh --verify --sign --key $KEY_GPG $repo.db.tar.gz $i || true
       del-all-pkg $(echo $i | sed 's/+/0/g')
@@ -56,7 +49,6 @@ if [[ -n $files_pkg ]]; then
       get-object $i $i2
       get-object $i.sig $i2.sig
       if $(gpg --verify $i2.sig $i2); then
-        get_db
         rm $i2.sig
         aws-rm $i.sig
         gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$i2"
