@@ -22,13 +22,13 @@ files=$(aws s3api list-objects --bucket "${bucket}" --prefix "${repo}/${arch}/" 
 
 # Delete packages and sig of packages + creare new sigs
 name_fdp="deleted_termux-${repo}_packages.txt"
-file_dp=$(echo "$files" | grep "pkgs/$name_fdp")
+file_dp=$(echo "$files" | grep "pkgs/$name_fdp" | head -1)
 if [[ -n $file_dp ]]; then
   get-object $file_dp $name_fdp
   get-object $file_dp.sig $name_fdp.sig
   if $(gpg --verify $name_fdp.sig $name_fdp); then
     for i in $(cat $name_fdp); do
-      ./repo-remove.sh --verify --sign --key $KEY_GPG $repo.db.tar.gz $i || true
+      ./repo-remove.sh --verify --sign --key $KEY_GPG $repo.db.tar.gz $i
       del-all-pkg $(echo $i | sed 's/+/0/g')
     done
     aws-rm $file_dp
