@@ -28,11 +28,15 @@ if [[ -n $file_dp ]]; then
   get-object $file_dp.sig $name_fdp.sig
   if $(gpg --verify $name_fdp.sig $name_fdp); then
     for i in $(cat $name_fdp); do
-      ./repo-remove.sh --verify --sign --key $KEY_GPG $repo.db.tar.gz $i
+      ./repo-remove.sh $repo.db.tar.gz $i || true
       del-all-pkg $(echo $i | sed 's/+/0/g')
     done
     aws-rm $file_dp
     aws-rm $file_dp.sig
+    for i in db files; do
+      rm $repo.$i.tar.gz.sig
+      gpg --batch --pinentry-mode=loopback --passphrase '${{ secrets.PW_GPG }}' --detach-sign --use-agent -u '${{ secrets.KEY_GPG }}' --no-armor "$repo.$i.tar.gz"
+    done
     upload=true
   else
     echo "Attention: package removal failed, sig did not match."
