@@ -35,7 +35,7 @@ if [[ -n $file_dp ]]; then
     aws-rm $file_dp.sig
     for i in db files; do
       rm $repo.$i.tar.gz.sig
-      gpg --batch --pinentry-mode=loopback --passphrase '${{ secrets.PW_GPG }}' --detach-sign --use-agent -u '${{ secrets.KEY_GPG }}' --no-armor "$repo.$i.tar.gz"
+      gpg --batch --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$repo.$i.tar.gz"
     done
     upload=true
   else
