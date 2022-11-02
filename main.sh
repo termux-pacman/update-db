@@ -69,9 +69,24 @@ if [[ -n $files_pkg ]]; then
   done
 fi
 
-# Upload db and sig of db
 if $upload; then
-  for i in db files; do
+  # Update json of repo
+  file_json=$(echo "$files" | grep "${repo}.json" | head -1)
+  if [[ -n $file_json ]]; then
+    get-object $file_json $repo.json
+    get-object $file_json.sig $repo.json.sig
+    if ! $(gpg --verify $repo.json.sig $repo.json); then
+      rm $repo.json
+      echo "Attention: ${repo}.json was removed because sig didn't match."
+    fi
+    rm $repo.json.sig
+  fi
+  python mrj.py $repo
+  mv $repo.json $repo.json.tar.gz
+  gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$repo.json.tar.gz"
+
+  # Upload db, sig of db and json of repo
+  for i in db files json; do
     put-object $repo/$arch/$repo.$i $repo.$i.tar.gz
     put-object $repo/$arch/$repo.$i.sig $repo.$i.tar.gz.sig
     rm $repo.$i*
