@@ -21,7 +21,10 @@ done
 files=$(aws s3api list-objects --bucket "${bucket}" --prefix "${repo}/${arch}/" | jq -r '.Contents[].Key')
 
 # Delete packages and sig of packages + creare new sigs
-name_fdp="deleted_termux-${repo}_packages.txt"
+case $repo in
+  main|root|x11) name_fdp="deleted_termux-${repo}_packages.txt";;
+  *) name_fdp="deleted_${repo}_packages.txt";;
+esac
 file_dp=$(echo "$files" | grep "pkgs/$name_fdp" | head -1)
 if [[ -n $file_dp ]]; then
   get-object $file_dp $name_fdp
