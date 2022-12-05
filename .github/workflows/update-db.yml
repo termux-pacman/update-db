@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target_repo: [main/aarch64, main/arm, main/i686, main/x86_64, x11/aarch64, x11/arm, x11/i686, x11/x86_64, root/aarch64, root/arm, root/i686, root/x86_64, tur/aarch64, tur/arm, tur/i686, tur/x86_64]
+        target_repo: [main/aarch64, main/arm, main/i686, main/x86_64, x11/aarch64, x11/arm, x11/i686, x11/x86_64, root/aarch64, root/arm, root/i686, root/x86_64, tur/aarch64, tur/arm, tur/i686, tur/x86_64, tur-continuous/aarch64, tur-continuous/arm, tur-continuous/i686, tur-continuous/x86_64]
     steps:
     - name: Clone repository
       uses: actions/checkout@v3
