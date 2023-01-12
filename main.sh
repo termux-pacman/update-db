@@ -19,13 +19,14 @@ done
 
 # Get list of files
 files=$(aws s3api list-objects --bucket "${bucket}" --prefix "${repo}/${arch}/" | jq -r '.Contents[].Key')
+sfpu_files=$(aws s3api list-objects --bucket "${SFPU}" --prefix "${repo}/${arch}/" | jq -r '.Contents[].Key')
 
 # Delete packages and sig of packages + creare new sigs
 case $repo in
   main|root|x11) name_fdp="deleted_termux-${repo}_packages.txt";;
   *) name_fdp="deleted_${repo}_packages.txt";;
 esac
-file_dp=$(echo "$files" | grep "pkgs/$name_fdp" | head -1)
+file_dp=$(echo "$sfpu_files" | grep "$name_fdp" | head -1)
 if [[ -n $file_dp ]]; then
   get-object $file_dp $name_fdp
   get-object $file_dp.sig $name_fdp.sig
@@ -48,20 +49,21 @@ if [[ -n $file_dp ]]; then
 fi
 
 # Update packages and create new sigs
-files_pkg=$(echo "$files" | grep "/pkgs/" | grep "\.pkg\.")
+files_pkg=$(echo "$sfpu_files" | grep "\.pkg\.")
 if [[ -n $files_pkg ]]; then
   for i in $files_pkg; do
     if [[ $i != *".pkg."*".sig" ]]; then
       i2=$(echo ${i##*/} | sed 's/+/0/g')
-      get-object $i $i2
-      get-object $i.sig $i2.sig
+      bucket="$SFPU" get-object $i $i2
+      bucket="$SFPU" get-object $i.sig $i2.sig
       if $(gpg --verify $i2.sig $i2); then
         rm $i2.sig
-        aws-rm $i.sig
+        bucket="$SFPU" aws-rm $i
+        bucket="$SFPU" aws-rm $i.sig
         gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$i2"
         ./repo-add.sh --verify --sign --key $KEY_GPG $repo.db.tar.gz $i2
         del-old-pkg $i2
-        aws-mv $i $repo/$arch/$i2
+        put-object $repo/$arch/$i2 $i2
         put-object $repo/$arch/$i2.sig $i2.sig
         upload=true
       else
