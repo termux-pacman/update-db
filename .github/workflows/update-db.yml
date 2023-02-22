@@ -21,17 +21,8 @@ jobs:
       with:
         persist-credentials: false
         fetch-depth: 0
-    - name: Install bsdtar
-      run: |
-        while true; do
-          {
-            sudo apt-get install libarchive-tools
-            break
-          } || {
-            sudo apt-get update
-            sudo apt-get upgrade
-          }
-        done
+    - name: Set pacman tool for db
+      uses: termux-pacman/pacman-tool-repo@v1
     - name: Install aws-cli
       run: |
         git clone https://github.com/termux-pacman/aws-cli-action
