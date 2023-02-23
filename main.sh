@@ -28,15 +28,15 @@ case $repo in
 esac
 file_dp=$(echo "$sfpu_files" | grep "$name_fdp" | head -1)
 if [[ -n $file_dp ]]; then
-  get-object $file_dp $name_fdp
-  get-object $file_dp.sig $name_fdp.sig
+  bucket="$SFPU" get-object $file_dp $name_fdp
+  bucket="$SFPU" get-object $file_dp.sig $name_fdp.sig
   if $(gpg --verify $name_fdp.sig $name_fdp); then
     for i in $(cat $name_fdp); do
       repo-remove $repo.db.tar.gz $i || true
-      del-all-pkg $(echo $i | sed 's/+/0/g')
+      #del-all-pkg $(echo $i | sed 's/+/0/g')
     done
-    aws-rm $file_dp
-    aws-rm $file_dp.sig
+    #bucket="$SFPU" aws-rm $file_dp
+    #bucket="$SFPU" aws-rm $file_dp.sig
     for i in db files; do
       rm $repo.$i.tar.gz.sig
       gpg --batch --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$repo.$i.tar.gz"
@@ -58,13 +58,13 @@ if [[ -n $files_pkg ]]; then
       bucket="$SFPU" get-object $i.sig $i2.sig
       if $(gpg --verify $i2.sig $i2); then
         rm $i2.sig
-        bucket="$SFPU" aws-rm $i
-        bucket="$SFPU" aws-rm $i.sig
+        #bucket="$SFPU" aws-rm $i
+        #bucket="$SFPU" aws-rm $i.sig
         gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$i2"
         repo-add --verify --sign --key $KEY_GPG $repo.db.tar.gz $i2
-        del-old-pkg $i2
-        put-object $repo/$arch/$i2 $i2
-        put-object $repo/$arch/$i2.sig $i2.sig
+        #del-old-pkg $i2
+        #put-object $repo/$arch/$i2 $i2
+        #put-object $repo/$arch/$i2.sig $i2.sig
         upload=true
       else
         echo "Attention: failed to update package '${i}', sig did not match."
@@ -73,6 +73,8 @@ if [[ -n $files_pkg ]]; then
     fi
   done
 fi
+
+upload=false
 
 if $upload; then
   # Update json of repo
