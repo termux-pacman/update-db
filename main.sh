@@ -67,7 +67,7 @@ if [[ -n $files_pkg ]]; then
         del-old-pkg $i2
         name_pkg = $(get_name $i)
         if ! $(echo "$name_pkg" | grep -q '\-static'); then
-          repo-remove $repo.db.tar.gz $name_pkg || true
+          repo-remove $repo.db.tar.gz "${name_pkg}-static" || true
           del-all-pkg "${name_pkg}-static"
         fi
         put-object $repo/$arch/$i2 $i2
