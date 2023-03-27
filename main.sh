@@ -39,8 +39,8 @@ if [[ -n $files_dp ]]; then
             del-all-pkg $(echo "${j}${z}" | sed 's/+/0/g')
           done
         done
-        bucket="$SFPU" aws-rm $file_dp
-        bucket="$SFPU" aws-rm $file_dp.sig
+        bucket="$SFPU" aws-rm $i
+        bucket="$SFPU" aws-rm $i.sig
         upload=true
       else
         echo "Attention: package removal failed, sig did not match."
