@@ -32,7 +32,6 @@ for i in tar.getmembers():
 				namepkg += "-"
 		list_namepkg.append(namepkg)
 		if namepkg not in db_list_pkgs.keys() or i_sp[0] != namepkg+"-"+db_list_pkgs[namepkg]["VERSION"]:
-			print("ok1")
 			tar.extract(i.name, path=tmp_dir.name)
 			file = open(f"{tmp_dir.name}/{i.name}", "r")
 			pkginfo = {}

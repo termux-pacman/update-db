@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Import func
 source ./aws-cli-action/func.sh
 repo="$1"
@@ -39,8 +41,8 @@ if [[ -n $files_dp ]]; then
             del-all-pkg $(echo "${j}${z}" | sed 's/+/0/g')
           done
         done
-        bucket="$SFPU" aws-rm $i
-        bucket="$SFPU" aws-rm $i.sig
+        #bucket="$SFPU" aws-rm $i
+        #bucket="$SFPU" aws-rm $i.sig
         upload=true
       else
         echo "Attention: package removal failed, sig did not match."
@@ -51,7 +53,7 @@ if [[ -n $files_dp ]]; then
 fi
 
 # Update packages and create new sigs of packages
-files_pkg=$(echo "$sfpu_files" | grep "\.pkg\.")
+files_pkg=$(echo "$sfpu_files" | grep "\.pkg\.") || true
 if [[ -n $files_pkg ]]; then
   for i in $files_pkg; do
     if [[ $i != *".pkg."*".sig" ]]; then
@@ -60,8 +62,8 @@ if [[ -n $files_pkg ]]; then
       bucket="$SFPU" get-object $i.sig $i2.sig
       if $(gpg --verify $i2.sig $i2); then
         rm $i2.sig
-        bucket="$SFPU" aws-rm $i
-        bucket="$SFPU" aws-rm $i.sig
+        #bucket="$SFPU" aws-rm $i
+        #bucket="$SFPU" aws-rm $i.sig
         gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$i2"
         repo-add $repo.db.tar.gz $i2
         del-old-pkg $i2
@@ -97,10 +99,12 @@ if $upload; then
 
   # Upload db, sig of db and json of repo
   for i in db files json; do
-    rm $repo.$i.tar.gz.sig
+    rm $repo.$i.tar.gz.sig || true
     gpg --batch --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$repo.$i.tar.gz"
     put-object $repo/$arch/$repo.$i $repo.$i.tar.gz
     put-object $repo/$arch/$repo.$i.sig $repo.$i.tar.gz.sig
-    rm $repo.$i*
   done
+
+  # Removing packages from SFPU
+  aws s3 rm "s3://${SFPU}/${repo}/${arch}" --recursive
 fi
