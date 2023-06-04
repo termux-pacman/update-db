@@ -105,6 +105,8 @@ if $upload; then
     put-object $repo/$arch/$repo.$i.sig $repo.$i.tar.gz.sig
   done
 
-  # Removing packages from SFPU
-  aws s3 rm "s3://${SFPU}/${repo}/${arch}" --recursive
+  # Removing files from SFPU
+  for i in $(echo "$sfpu_files" | awk -F '/' '{printf $3 " "}'); do
+    bucket="$SFPU" aws-rm $repo/$arch/$i
+  done
 fi
