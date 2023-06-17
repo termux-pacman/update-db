@@ -9,6 +9,13 @@ bucket="termux-pacman.us"
 arch="$2"
 upload=false
 
+ls_files_s3() {
+	local request=$(aws s3api list-objects --bucket "${1}" --prefix "${2}")
+	if [[ $(echo "$request" | jq -r '."Contents"') != "null" ]]; then
+		echo "$request" | jq -r '.Contents[].Key'
+	fi
+}
+
 # Get and check dbs
 for format in db files; do
   get-object $repo/$arch/$repo.$format $repo.$format.tar.gz
@@ -20,8 +27,8 @@ for format in db files; do
 done
 
 # Get list of files
-files=$(aws s3api list-objects --bucket "${bucket}" --prefix "${repo}/${arch}/" | jq -r '.Contents[].Key')
-sfpu_files=$(aws s3api list-objects --bucket "${SFPU}" --prefix "${repo}/${arch}/" | jq -r '.Contents[].Key')
+files=$(ls_files_s3 "${bucket}" "${repo}/${arch}/")
+sfpu_files=$(ls_files_s3 "${SFPU}" "${repo}/${arch}/")
 
 # Delete packages and sig of packages
 case $repo in
