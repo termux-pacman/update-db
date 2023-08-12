@@ -91,16 +91,7 @@ if [[ -n $files_pkg ]]; then
 fi
 
 if $upload; then
-  # Update json of repo
-  file_json=$(echo "$files" | grep "${repo}.json" | head -1)
-  if [[ -n $file_json ]]; then
-    get-object $file_json $repo.json
-    get-object $file_json.sig $repo.json.sig
-    if ! $(gpg --verify $repo.json.sig $repo.json); then
-      rm $repo.json
-      echo "Attention: ${repo}.json was removed because sig didn't match."
-    fi
-  fi
+  # Create json of repo
   python mrj.py $repo
   mv $repo.json $repo.json.tar.gz
 
