@@ -74,7 +74,7 @@ if [[ -n $files_pkg ]]; then
         gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$i2"
         repo-add $repo.db.tar.gz $i2
         del-old-pkg $i2
-        name_pkg=$(get_name $i)
+        name_pkg=$(get_name $i2)
         if ! $(echo "$name_pkg" | grep -q '\-static'); then
           repo-remove $repo.db.tar.gz "${name_pkg}-static" || true
           del-all-pkg "${name_pkg}-static"
