@@ -26,7 +26,7 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: Set pacman tool for db
-      uses: termux-pacman/pacman-tool-repo@v1.1
+      uses: termux-pacman/pacman-tool-repo@v2
     - name: Install aws-cli
       run: |
         git clone https://github.com/termux-pacman/aws-cli-action
