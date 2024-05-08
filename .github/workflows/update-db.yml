@@ -38,6 +38,7 @@ jobs:
         gpg --pinentry-mode=loopback --passphrase '${{ secrets.PW_GPG }}' --import gk/termux-pacman.gpg
         echo "${{ secrets.SF_GPG_BOT }}" > gk/termux-pacman-bot.gpg
         gpg --pinentry-mode=loopback --passphrase '${{ secrets.PW_GPG_BOT }}' --import gk/termux-pacman-bot.gpg
+        rm -fr gk
     - name: Update db
       run: |
         export KEY_GPG='${{ secrets.KEY_GPG }}'

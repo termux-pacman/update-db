@@ -8,12 +8,36 @@ repo="$1"
 bucket="termux-pacman.us"
 arch="$2"
 upload=false
+oldpkgs="oldpkgs.db"
+update_oldpkgs=false
 
 ls_files_s3() {
 	local request=$(aws s3api list-objects --bucket "${1}" --prefix "${2}")
-	if [[ $(echo "$request" | jq -r '."Contents"') != "null" ]]; then
-		echo "$request" | jq -r '.Contents[].Key'
+	if [[ $(jq -r '."Contents"' <<< "$request") != "null" ]]; then
+		jq -r '.Contents[].Key' <<< "$request"
 	fi
+}
+
+del-old-pkg() {
+	local name_pkg=$(get_name $1)
+	for _pkg_f_del_old_pkg in $(grep $name_pkg <<< "$files"); do
+		if [[ ${_pkg_f_del_old_pkg} != *".pkg."*".sig" && $1 != $(sed 's/+/0/g' <<< ${_pkg_f_del_old_pkg##*/}) && \
+			$name_pkg = $(get_name ${_pkg_f_del_old_pkg##*/}) ]] && \
+			! grep -q "^${_pkg_f_del_old_pkg}===" ${oldpkgs}; then
+			echo "${_pkg_f_del_old_pkg}===$(date +%s)" >> ${oldpkgs}
+		fi
+	done
+	update_oldpkgs=true
+}
+
+del-all-pkg() {
+	for _pkg_f_del_all_pkg in $(grep $1 <<< "$files"); do
+		if [[ ${_pkg_f_del_all_pkg} != *".pkg."*".sig" && $1 = $(get_name ${_pkg_f_del_all_pkg##*/}) ]] && \
+			! grep -q "^${_pkg_f_del_all_pkg}===" ${oldpkgs}; then
+			echo "${_pkg_f_del_all_pkg}===$(date +%s)" >> ${oldpkgs}
+		fi
+	done
+	update_oldpkgs=true
 }
 
 # Get and check dbs
@@ -30,12 +54,24 @@ done
 files=$(ls_files_s3 "${bucket}" "${repo}/${arch}/")
 sfpu_files=$(ls_files_s3 "${SFPU}" "${repo}/${arch}/")
 
+# Delete old packages
+bucket="$SFPU" get-object system-files/$repo/$arch/$oldpkgs $oldpkgs
+for i in $(cat $oldpkgs); do
+  if [[ $(( ( ($(date +%s) - ${i#*===}) / 3600 ) > 12 )) = 1 ]]; then
+    for j in $(grep ${i%%===*} <<< "$files"); do
+      aws-rm $j
+    done
+    sed -i "\|^${i}$|d" $oldpkgs
+    update_oldpkgs=true
+  fi
+done
+
 # Delete packages and sig of packages
 case $repo in
   main|root|x11) name_fdp="deleted_termux-${repo}_packages.txt";;
   *) name_fdp="deleted_${repo}_packages.txt";;
 esac
-files_dp=$(echo "$sfpu_files" | grep "$name_fdp" | head -1)
+files_dp=$(grep "$name_fdp" <<< "$sfpu_files" | head -1)
 if [[ -n $files_dp ]]; then
   for i in $files_dp; do
     if [[ $i != *"$name_fdp"*".sig" ]]; then
@@ -48,8 +84,6 @@ if [[ -n $files_dp ]]; then
             del-all-pkg $(echo "${j}${z}" | sed 's/+/0/g')
           done
         done
-        #bucket="$SFPU" aws-rm $i
-        #bucket="$SFPU" aws-rm $i.sig
         upload=true
       else
         echo "Attention: package removal failed, sig did not match."
@@ -60,22 +94,20 @@ if [[ -n $files_dp ]]; then
 fi
 
 # Update packages and create new sigs of packages
-files_pkg=$(echo "$sfpu_files" | grep "\.pkg\.") || true
+files_pkg=$(grep "\.pkg\." <<< "$sfpu_files") || true
 if [[ -n $files_pkg ]]; then
   for i in $files_pkg; do
     if [[ $i != *".pkg."*".sig" ]]; then
-      i2=$(echo ${i##*/} | sed 's/+/0/g')
+      i2=$(sed 's/+/0/g' <<< ${i##*/})
       bucket="$SFPU" get-object $i $i2
       bucket="$SFPU" get-object $i.sig $i2.sig
       if $(gpg --verify $i2.sig $i2); then
         rm $i2.sig
-        #bucket="$SFPU" aws-rm $i
-        #bucket="$SFPU" aws-rm $i.sig
         gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$i2"
         repo-add $repo.db.tar.gz $i2
         del-old-pkg $i2
         name_pkg=$(get_name $i2)
-        if ! $(echo "$name_pkg" | grep -q '\-static'); then
+        if ! $(grep -q '\-static' <<< "$name_pkg"); then
           repo-remove $repo.db.tar.gz "${name_pkg}-static" || true
           del-all-pkg "${name_pkg}-static"
         fi
@@ -88,6 +120,11 @@ if [[ -n $files_pkg ]]; then
       rm $i2*
     fi
   done
+fi
+
+# Upload list old pkgs
+if $update_oldpkgs; then
+  bucket="$SFPU" put-object system-files/$repo/$arch/$oldpkgs $oldpkgs
 fi
 
 if $upload; then
@@ -104,7 +141,7 @@ if $upload; then
   done
 
   # Removing files from SFPU
-  for i in $(echo "$sfpu_files" | awk -F '/' '{printf $3 " "}'); do
-    bucket="$SFPU" aws-rm $repo/$arch/$i
+  for i in $sfpu_files; do
+    bucket="$SFPU" aws-rm $i
   done
 fi
