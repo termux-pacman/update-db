@@ -20,7 +20,7 @@ ls_files_s3() {
 
 del-old-pkg() {
 	local name_pkg=$(get_name $1)
-	for _pkg_f_del_old_pkg in $(grep $name_pkg <<< "$files"); do
+	for _pkg_f_del_old_pkg in $(grep "/${name_pkg}-" <<< "$files"); do
 		if [[ ${_pkg_f_del_old_pkg} != *".pkg."*".sig" && $1 != $(sed 's/+/0/g' <<< ${_pkg_f_del_old_pkg##*/}) && \
 			$name_pkg = $(get_name ${_pkg_f_del_old_pkg##*/}) ]] && \
 			! grep -q "^${_pkg_f_del_old_pkg}===" ${oldpkgs}; then
@@ -31,7 +31,7 @@ del-old-pkg() {
 }
 
 del-all-pkg() {
-	for _pkg_f_del_all_pkg in $(grep $1 <<< "$files"); do
+	for _pkg_f_del_all_pkg in $(grep "/${1}-" <<< "$files"); do
 		if [[ ${_pkg_f_del_all_pkg} != *".pkg."*".sig" && $1 = $(get_name ${_pkg_f_del_all_pkg##*/}) ]] && \
 			! grep -q "^${_pkg_f_del_all_pkg}===" ${oldpkgs}; then
 			echo "${_pkg_f_del_all_pkg}===$(date +%s)" >> ${oldpkgs}
@@ -44,7 +44,7 @@ del-all-pkg() {
 for format in db files; do
   get-object $repo/$arch/$repo.$format $repo.$format.tar.gz
   get-object $repo/$arch/$repo.$format.sig $repo.$format.tar.gz.sig
-  if ! $(gpg --verify $repo.$format.tar.gz.sig $repo.$format.tar.gz); then
+  if ! gpg --verify $repo.$format.tar.gz.sig $repo.$format.tar.gz; then
     echo "Eroor: with $repo.$format.tar.gz.sig"
     exit 1
   fi
@@ -77,7 +77,7 @@ if [[ -n $files_dp ]]; then
     if [[ $i != *"$name_fdp"*".sig" ]]; then
       bucket="$SFPU" get-object $i $name_fdp
       bucket="$SFPU" get-object $i.sig $name_fdp.sig
-      if $(gpg --verify $name_fdp.sig $name_fdp); then
+      if gpg --verify $name_fdp.sig $name_fdp; then
         for j in $(cat $name_fdp); do
           for z in "" "-static"; do
             repo-remove $repo.db.tar.gz "${j}${z}" || true
@@ -101,15 +101,17 @@ if [[ -n $files_pkg ]]; then
       i2=$(sed 's/+/0/g' <<< ${i##*/})
       bucket="$SFPU" get-object $i $i2
       bucket="$SFPU" get-object $i.sig $i2.sig
-      if $(gpg --verify $i2.sig $i2); then
+      if gpg --verify $i2.sig $i2; then
         rm $i2.sig
         gpg --no-tty --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$i2"
         repo-add $repo.db.tar.gz $i2
         del-old-pkg $i2
         name_pkg=$(get_name $i2)
-        if ! $(grep -q '\-static' <<< "$name_pkg"); then
+        if ! grep -q '\-static' <<< "$name_pkg"; then
           repo-remove $repo.db.tar.gz "${name_pkg}-static" || true
           del-all-pkg "${name_pkg}-static"
+        elif grep -q "^${repo}/${arch}/${i2}===" ${oldpkgs}; then
+          sed -i "\|^${repo}/${arch}/${i2}===|d" ${oldpkgs}
         fi
         put-object $repo/$arch/$i2 $i2
         put-object $repo/$arch/$i2.sig $i2.sig

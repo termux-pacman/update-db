@@ -43,8 +43,6 @@ jobs:
       run: |
         export KEY_GPG='${{ secrets.KEY_GPG }}'
         export PW_GPG='${{ secrets.PW_GPG }}'
-        export KEY_GPG_BOT='${{ secrets.KEY_GPG_BOT }}'
-        export PW_GPG_BOT='${{ secrets.PW_GPG_BOT }}'
         export SFPU='${{ secrets.SFPU }}'
         target_repo='${{ matrix.target_repo }}'
         echo "==> Update packages in repo '${target_repo}'."
