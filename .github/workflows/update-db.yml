@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   update-db:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         target_repo: [main/aarch64, main/arm, main/i686, main/x86_64, x11/aarch64, x11/arm, x11/i686, x11/x86_64, root/aarch64, root/arm, root/i686, root/x86_64, tur/aarch64, tur/arm, tur/i686, tur/x86_64, tur-continuous/aarch64, tur-continuous/arm, tur-continuous/i686, tur-continuous/x86_64, tur-multilib/aarch64, tur-multilib/arm, tur-multilib/i686, tur-multilib/x86_64, gpkg/aarch64, gpkg/arm, gpkg/x86_64, gpkg/i686, cgct/x86_64]
@@ -26,7 +26,7 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: Set pacman tool for db
-      uses: termux-pacman/pacman-tool-repo@v2.2
+      uses: termux-pacman/pacman-tool-repo@v2.3
     - name: Install aws-cli
       run: |
         git clone https://github.com/termux-pacman/aws-cli-action
