@@ -11,6 +11,10 @@ upload=false
 oldpkgs="oldpkgs.db"
 update_oldpkgs=false
 
+if [ -z "${GITHUB_EVENT}" ]; then
+	GITHUB_EVENT="push"
+fi
+
 ls_files_s3() {
 	local request=$(aws s3api list-objects --bucket "${1}" --prefix "${2}")
 	if [[ $(jq -r '."Contents"' <<< "$request") != "null" ]]; then
@@ -57,9 +61,13 @@ sfpu_files=$(ls_files_s3 "${SFPU}" "${repo}/${arch}/")
 # Delete old packages
 bucket="$SFPU" get-object system-files/$repo/$arch/$oldpkgs $oldpkgs
 for i in $(cat $oldpkgs); do
-  if [[ $(( ( ($(date +%s) - ${i#*===}) / 3600 ) > 12 )) = 1 ]]; then
+  if (( (($(date +%s) - ${i#*===}) / 3600 ) > 12 )); then
     for j in $(grep ${i%%===*} <<< "$files"); do
-      aws-rm $j
+      if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+        aws-rm $j
+      else
+        echo "aws-rm ${j}"
+      fi
     done
     sed -i "\|^${i}$|d" $oldpkgs
     update_oldpkgs=true
@@ -113,8 +121,13 @@ if [[ -n $files_pkg ]]; then
         elif grep -q "^${repo}/${arch}/${i2}===" ${oldpkgs}; then
           sed -i "\|^${repo}/${arch}/${i2}===|d" ${oldpkgs}
         fi
-        put-object $repo/$arch/$i2 $i2
-        put-object $repo/$arch/$i2.sig $i2.sig
+        if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+          put-object $repo/$arch/$i2 $i2
+          put-object $repo/$arch/$i2.sig $i2.sig
+        else
+          echo "put-object $repo/$arch/$i2 $i2"
+          echo "put-object $repo/$arch/$i2.sig $i2.sig"
+        fi
         upload=true
       else
         echo "Attention: failed to update package '${i}', sig did not match."
@@ -126,7 +139,12 @@ fi
 
 # Upload list old pkgs
 if $update_oldpkgs; then
-  bucket="$SFPU" put-object system-files/$repo/$arch/$oldpkgs $oldpkgs
+  if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+    bucket="$SFPU" put-object system-files/$repo/$arch/$oldpkgs $oldpkgs
+  else
+    echo "bucket={SFPU} put-object system-files/$repo/$arch/$oldpkgs $oldpkgs"
+  fi
+  export UPDATE_RSYNC=true
 fi
 
 if $upload; then
@@ -138,12 +156,22 @@ if $upload; then
   for i in db files json; do
     rm $repo.$i.tar.gz.sig || true
     gpg --batch --pinentry-mode=loopback --passphrase $PW_GPG --detach-sign --use-agent -u $KEY_GPG --no-armor "$repo.$i.tar.gz"
-    put-object $repo/$arch/$repo.$i $repo.$i.tar.gz
-    put-object $repo/$arch/$repo.$i.sig $repo.$i.tar.gz.sig
+    if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+      put-object $repo/$arch/$repo.$i $repo.$i.tar.gz
+      put-object $repo/$arch/$repo.$i.sig $repo.$i.tar.gz.sig
+    else
+      echo "put-object $repo/$arch/$repo.$i $repo.$i.tar.gz"
+      echo "put-object $repo/$arch/$repo.$i.sig $repo.$i.tar.gz.sig"
+    fi
   done
 
   # Removing files from SFPU
   for i in $sfpu_files; do
-    bucket="$SFPU" aws-rm $i
+    if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+        bucket="$SFPU" aws-rm $i
+    else
+        echo "bucket={SFPU} aws-rm $i"
+    fi
   done
+  export UPDATE_RSYNC=true
 fi

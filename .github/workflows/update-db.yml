@@ -2,14 +2,20 @@ name: Update db
 
 on:
   push:
+    branches:
+    - main
+    patch:
+    - '.github/workflows/update-db.yml'
+    - 'main.sh'
+  pull_request:
     patch:
     - '.github/workflows/update-db.yml'
     - 'main.sh'
   schedule:
-   - cron:  '0,30 0-23 * * *'
+  - cron:  '0,30 0-23 * * *'
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.ref_name }}-${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
@@ -17,7 +23,35 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        target_repo: [main/aarch64, main/arm, main/i686, main/x86_64, x11/aarch64, x11/arm, x11/i686, x11/x86_64, root/aarch64, root/arm, root/i686, root/x86_64, tur/aarch64, tur/arm, tur/i686, tur/x86_64, tur-continuous/aarch64, tur-continuous/arm, tur-continuous/i686, tur-continuous/x86_64, tur-multilib/aarch64, tur-multilib/arm, tur-multilib/i686, tur-multilib/x86_64, gpkg/aarch64, gpkg/arm, gpkg/x86_64, gpkg/i686, cgct/x86_64]
+        target_repo: [main__aarch64,
+                      main__arm,
+                      main__i686,
+                      main__x86_64,
+                      x11__aarch64,
+                      x11__arm,
+                      x11__i686,
+                      x11__x86_64,
+                      root__aarch64,
+                      root__arm,
+                      root__i686,
+                      root__x86_64,
+                      tur__aarch64,
+                      tur__arm,
+                      tur__i686,
+                      tur__x86_64,
+                      tur-continuous__aarch64,
+                      tur-continuous__arm,
+                      tur-continuous__i686,
+                      tur-continuous__x86_64,
+                      tur-multilib__aarch64,
+                      tur-multilib__arm,
+                      tur-multilib__i686,
+                      tur-multilib__x86_64,
+                      gpkg__aarch64,
+                      gpkg__arm,
+                      gpkg__x86_64,
+                      gpkg__i686,
+                      cgct__x86_64]
       fail-fast: false
     steps:
     - name: Clone repository
@@ -26,7 +60,7 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: Set pacman tool for db
-      uses: termux-pacman/pacman-actions@v2.4
+      uses: termux-pacman/pacman-actions@v2.5
     - name: Install aws-cli
       run: |
         git clone https://github.com/termux-pacman/aws-cli-action
@@ -40,10 +74,84 @@ jobs:
         gpg --pinentry-mode=loopback --passphrase '${{ secrets.PW_GPG_BOT }}' --import gk/termux-pacman-bot.gpg
         rm -fr gk
     - name: Update db
+      id: update-db
+      env:
+        KEY_GPG: ${{ secrets.KEY_GPG }}
+        PW_GPG: ${{ secrets.PW_GPG }}
+        SFPU: ${{ secrets.SFPU }}
+        TARGET_REPO: ${{ matrix.target_repo }}
+        GITHUB_EVENT: ${{ github.event_name }}
       run: |
-        export KEY_GPG='${{ secrets.KEY_GPG }}'
-        export PW_GPG='${{ secrets.PW_GPG }}'
-        export SFPU='${{ secrets.SFPU }}'
-        target_repo='${{ matrix.target_repo }}'
-        echo "==> Update packages in repo '${target_repo}'."
-        ./main.sh "${target_repo%%/*}" "${target_repo#*/}"
+        if [[ "${GITHUB_EVENT}" = "schedule" && "${{ github.ref_name }}" != "main" ]]; then
+          echo "stop schedule outside main branch"
+          exit 1
+        fi
+        export UPDATE_RSYNC=false
+        echo "==> Update packages in repo '${TARGET_REPO}'."
+        source ./main.sh "${TARGET_REPO%%__*}" "${TARGET_REPO#*__}"
+        echo "UPDATE_RSYNC_${TARGET_REPO}=${UPDATE_RSYNC}" >> "$GITHUB_OUTPUT"
+    outputs:
+      update_rsync_main__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__aarch64 }}
+      update_rsync_main__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__arm }}
+      update_rsync_main__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__i686 }}
+      update_rsync_main__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__x86_64 }}
+      update_rsync_x11__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__aarch64 }}
+      update_rsync_x11__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__arm }}
+      update_rsync_x11__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__i686 }}
+      update_rsync_x11__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__x86_64 }}
+      update_rsync_root__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__aarch64 }}
+      update_rsync_root__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__arm }}
+      update_rsync_root__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__i686 }}
+      update_rsync_root__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__x86_64 }}
+      update_rsync_tur__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__aarch64 }}
+      update_rsync_tur__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__arm }}
+      update_rsync_tur__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__i686 }}
+      update_rsync_tur__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__x86_64 }}
+      update_rsync_tur-continuous__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__aarch64 }}
+      update_rsync_tur-continuous__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__arm }}
+      update_rsync_tur-continuous__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__i686 }}
+      update_rsync_tur-continuous__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__x86_64 }}
+      update_rsync_tur-multilib__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__aarch64 }}
+      update_rsync_tur-multilib__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__arm }}
+      update_rsync_tur-multilib__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__i686 }}
+      update_rsync_tur-multilib__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__x86_64 }}
+      update_rsync_gpkg__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__aarch64 }}
+      update_rsync_gpkg__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__arm }}
+      update_rsync_gpkg__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__x86_64 }}
+      update_rsync_gpkg__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__i686 }}
+      update_rsync_cgct__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_cgct__x86_64 }}
+  update-rsync:
+    runs-on: ubuntu-24.04
+    needs: update-db
+    steps:
+    - name: Import crt
+      run: |
+        echo "${{ secrets.UR_SERVER_CRT }}" > ./server.crt
+        echo "${{ secrets.UR_CLIENT_CRT }}" > ./client.crt
+    - name: Update rsync
+      env:
+        UPDATE_RSYNC: ${{ toJSON(needs.update-db.outputs) }}
+      run: |
+        if jq -r '.[]' <<< "${UPDATE_RSYNC}" | grep -q '^true$'; then
+          for i in {1..5}; do
+            res=$(curl -s -X POST -H "${{ secrets.UR_HEADERS }}" --cacert ./server.crt --cert ./client.crt "${{ secrets.UR_ADDRESS }}" | sed 's/\r//g')
+            echo "Result: ${res}"
+            if [ "${res}" = "ok" ]; then
+              echo "Success"
+              break
+            elif [ "${res}" = "busy" ]; then
+              if [ "${i}" = "5" ]; then
+                echo "The 5 time is busy, looks like something is broken"
+                exit 1
+              fi
+              echo "The system is busy, waiting 70 seconds ${i} times"
+              sleep 70
+              continue
+            else
+              echo "Internal error occurred"
+              exit 1
+            fi
+          done
+        else
+          echo "Nothing to do"
+        fi
