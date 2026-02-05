@@ -44,10 +44,14 @@ del-all-pkg() {
 	update_oldpkgs=true
 }
 
+curl_download() {
+	curl "https://service.termux-pacman.dev/${1}" -o "${2}"
+}
+
 # Get and check dbs
 for format in db files; do
-  get-object $repo/$arch/$repo.$format $repo.$format.tar.gz
-  get-object $repo/$arch/$repo.$format.sig $repo.$format.tar.gz.sig
+  curl_download $repo/$arch/$repo.$format $repo.$format.tar.gz
+  curl_download $repo/$arch/$repo.$format.sig $repo.$format.tar.gz.sig
   if ! gpg --verify $repo.$format.tar.gz.sig $repo.$format.tar.gz; then
     echo "Eroor: with $repo.$format.tar.gz.sig"
     exit 1
