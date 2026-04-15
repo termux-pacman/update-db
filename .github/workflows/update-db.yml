@@ -61,10 +61,12 @@ jobs:
         fetch-depth: 0
     - name: Set pacman tool for db
       uses: termux-pacman/pacman-actions@v2.5
-    - name: Install aws-cli
-      run: |
-        git clone https://github.com/termux-pacman/aws-cli-action
-        ./aws-cli-action/setup.sh '${{ secrets.AWS_ACCESS_KEY_ID }}' '${{ secrets.AWS_ACCESS_KEY }}' '${{ secrets.AWS_REGION }}'
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6.1.0
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
     - name: Import gpg key
       run: |
         mkdir gk
@@ -87,7 +89,6 @@ jobs:
           exit 1
         fi
         export UPDATE_RSYNC=false
-        echo "==> Update packages in repo '${TARGET_REPO}'."
         source ./main.sh "${TARGET_REPO%%__*}" "${TARGET_REPO#*__}"
         echo "UPDATE_RSYNC_${TARGET_REPO}=${UPDATE_RSYNC}" >> "$GITHUB_OUTPUT"
     outputs:
@@ -131,27 +132,32 @@ jobs:
     - name: Update rsync
       env:
         UPDATE_RSYNC: ${{ toJSON(needs.update-db.outputs) }}
+        GITHUB_EVENT: ${{ github.event_name }}
       run: |
         if jq -r '.[]' <<< "${UPDATE_RSYNC}" | grep -q '^true$'; then
-          for i in {1..5}; do
-            res=$(curl -s -X POST -H "${{ secrets.UR_HEADERS }}" --cacert ./server.crt --cert ./client.crt "${{ secrets.UR_ADDRESS }}" | sed 's/\r//g')
-            echo "Result: ${res}"
-            if [ "${res}" = "ok" ]; then
-              echo "Success"
-              break
-            elif [ "${res}" = "busy" ]; then
-              if [ "${i}" = "5" ]; then
-                echo "The 5 time is busy, looks like something is broken"
+          if [ "${GITHUB_EVENT}" = "pull_request" ]; then
+            echo "Variables have successfully triggered the rsync update algorithm, testing complete"
+          else
+            for i in {1..5}; do
+              res=$(curl -s -X POST -H "${{ secrets.UR_HEADERS }}" --cacert ./server.crt --cert ./client.crt "${{ secrets.UR_ADDRESS }}" | sed 's/\r//g')
+              echo "Result: ${res}"
+              if [ "${res}" = "ok" ]; then
+                echo "Success"
+                break
+              elif [ "${res}" = "busy" ]; then
+                if [ "${i}" = "5" ]; then
+                  echo "The 5 time is busy, looks like something is broken"
+                  exit 1
+                fi
+                echo "The system is busy, waiting 70 seconds ${i} times"
+                sleep 70
+                continue
+              else
+                echo "Internal error occurred"
                 exit 1
               fi
-              echo "The system is busy, waiting 70 seconds ${i} times"
-              sleep 70
-              continue
-            else
-              echo "Internal error occurred"
-              exit 1
-            fi
-          done
+            done
+          fi
         else
           echo "Nothing to do"
         fi
