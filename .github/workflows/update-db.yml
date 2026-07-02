@@ -12,7 +12,8 @@ on:
     - '.github/workflows/update-db.yml'
     - 'main.sh'
   schedule:
-  - cron:  '0,30 0-23 * * *'
+  - cron:  '*/30 * * * *'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.ref_name }}-${{ github.workflow }}
@@ -20,7 +21,7 @@ concurrency:
 
 jobs:
   update-db:
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted #ubuntu-24.04
     strategy:
       matrix:
         target_repo: [main__aarch64,
@@ -55,19 +56,21 @@ jobs:
       fail-fast: false
     steps:
     - name: Clone repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         persist-credentials: false
         fetch-depth: 0
     - name: Set pacman tool for db
-      uses: termux-pacman/pacman-actions@v2.5
+      if: runner.environment == 'github-hosted'
+      uses: termux-pacman/pacman-actions@v2.6
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v6.1.0
+      uses: aws-actions/configure-aws-credentials@v6.2.1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
     - name: Import gpg key
+      if: runner.environment == 'github-hosted'
       run: |
         mkdir gk
         echo "${{ secrets.SF_GPG }}" > gk/termux-pacman.gpg
@@ -91,6 +94,9 @@ jobs:
         export UPDATE_RSYNC=false
         source ./main.sh "${TARGET_REPO%%__*}" "${TARGET_REPO#*__}"
         echo "UPDATE_RSYNC_${TARGET_REPO}=${UPDATE_RSYNC}" >> "$GITHUB_OUTPUT"
+    - name: Clean
+      if: runner.environment == 'self-hosted'
+      run: rm -fr *
     outputs:
       update_rsync_main__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__aarch64 }}
       update_rsync_main__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__arm }}
@@ -122,7 +128,7 @@ jobs:
       update_rsync_gpkg__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__i686 }}
       update_rsync_cgct__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_cgct__x86_64 }}
   update-rsync:
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted #ubuntu-24.04
     needs: update-db
     steps:
     - name: Import crt
@@ -161,3 +167,6 @@ jobs:
         else
           echo "Nothing to do"
         fi
+    - name: Clean
+      if: runner.environment == 'self-hosted'
+      run: rm -fr *
