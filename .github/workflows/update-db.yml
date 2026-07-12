@@ -84,6 +84,7 @@ jobs:
         KEY_GPG: ${{ secrets.KEY_GPG }}
         PW_GPG: ${{ secrets.PW_GPG }}
         SFPU: ${{ secrets.SFPU }}
+        DISTRIBUTION_ID: ${{ secrets.DISTRIBUTION_ID }}
         TARGET_REPO: ${{ matrix.target_repo }}
         GITHUB_EVENT: ${{ github.event_name }}
       run: |
