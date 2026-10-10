@@ -10,8 +10,8 @@ oldpkgs="oldpkgs.db"
 update_oldpkgs=false
 disable_cache_policy=false
 
-if [ -z "${GITHUB_EVENT}" ]; then
-	GITHUB_EVENT="push"
+if [ -z "${EVENT}" ]; then
+	EVENT="push"
 fi
 
 info() {
@@ -27,7 +27,11 @@ error() {
 	exit 1
 }
 
-get_name() {
+fix-chars() {
+	sed 's/+/0/g; s/~/-/g'
+}
+
+get-name() {
 	local name="" file_sp=(${1//-/ })
 	for _index_f_get_name in $(seq 0 $((${#file_sp[*]}-4))); do
 		if [ -z ${name} ]; then
@@ -36,7 +40,7 @@ get_name() {
 			name+="-${file_sp[_index_f_get_name]}"
 		fi
 	done
-	echo "${name//+/0}"
+	fix-chars <<< "${name}"
 }
 
 get-object() {
@@ -51,7 +55,7 @@ put-object() {
 		cache_control_flag="--cache-control 'no-cache, no-store, max-age=0, must-revalidate'"
 	fi
 	info "aws s3api put-object --bucket ${bucket} --key ${1} --body ${2} ${cache_control_flag}"
-	if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+	if [ "${EVENT}" != "pull_request" ]; then
 		eval "aws s3api put-object --bucket ${bucket} --key ${1} --body ${2} ${cache_control_flag}"
 	fi
 	echo -e "\n\n"
@@ -59,7 +63,7 @@ put-object() {
 
 aws-rm() {
 	info "aws s3 rm s3://${bucket}/${1}"
-	if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+	if [ "${EVENT}" != "pull_request" ]; then
 		aws s3 rm "s3://${bucket}/${1}"
 	fi
 	echo -e "\n\n"
@@ -67,13 +71,13 @@ aws-rm() {
 
 invalidation() {
 	info "aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID} --paths /${1}"
-	if [ "${GITHUB_EVENT}" != "pull_request" ]; then
+	if [ "${EVENT}" != "pull_request" ]; then
 		aws cloudfront create-invalidation --distribution-id "${DISTRIBUTION_ID}" --paths "/${1}"
 	fi
 	echo -e "\n\n"
 }
 
-ls_files_s3() {
+ls-files-s3() {
 	local request=$(aws s3api list-objects --bucket "${1}" --prefix "${2}")
 	if [[ $(jq -r '."Contents"' <<< "${request}") != "null" ]]; then
 		jq -r '.Contents[].Key' <<< "${request}"
@@ -81,11 +85,12 @@ ls_files_s3() {
 }
 
 del-old-pkg() {
-	local name_pkg=$(get_name "${1}")
+	local name_pkg=$(get-name "${1}")
 	for _pkg_f_del_old_pkg in $(grep "/${name_pkg}-" <<< "${files}"); do
-		if [[ "${_pkg_f_del_old_pkg}" != *".pkg."*".sig" && "${1}" != $(sed 's/+/0/g' <<< "${_pkg_f_del_old_pkg##*/}") && \
-			"${name_pkg}" = $(get_name "${_pkg_f_del_old_pkg##*/}") ]] && \
+		if [[ "${_pkg_f_del_old_pkg}" != *".pkg."*".sig" && "${1}" != $(fix-chars <<< "${_pkg_f_del_old_pkg##*/}") && \
+			"${name_pkg}" = $(get-name "${_pkg_f_del_old_pkg##*/}") ]] && \
 			! grep -q "^${_pkg_f_del_old_pkg}===" ${oldpkgs}; then
+			info "del-old-pkg '${_pkg_f_del_old_pkg}'"
 			echo "${_pkg_f_del_old_pkg}===$(date +%s)" >> ${oldpkgs}
 		fi
 	done
@@ -94,8 +99,9 @@ del-old-pkg() {
 
 del-all-pkg() {
 	for _pkg_f_del_all_pkg in $(grep "/${1}-" <<< "${files}"); do
-		if [[ "${_pkg_f_del_all_pkg}" != *".pkg."*".sig" && "${1}" = $(get_name "${_pkg_f_del_all_pkg##*/}") ]] && \
+		if [[ "${_pkg_f_del_all_pkg}" != *".pkg."*".sig" && "${1}" = $(get-name "${_pkg_f_del_all_pkg##*/}") ]] && \
 			! grep -q "^${_pkg_f_del_all_pkg}===" ${oldpkgs}; then
+			info "del-all-pkg '${_pkg_f_del_all_pkg}'"
 			echo "${_pkg_f_del_all_pkg}===$(date +%s)" >> ${oldpkgs}
 		fi
 	done
@@ -112,8 +118,8 @@ for format in db files; do
 done
 
 # Get list of files
-files=$(ls_files_s3 "${bucket}" "${repo}/${arch}/")
-sfpu_files=$(ls_files_s3 "${SFPU}" "${repo}/${arch}/")
+files=$(ls-files-s3 "${bucket}" "${repo}/${arch}/")
+sfpu_files=$(ls-files-s3 "${SFPU}" "${repo}/${arch}/")
 
 # Delete old packages
 bucket="${SFPU}" get-object "system-files/${repo}/${arch}/${oldpkgs}" "${oldpkgs}"
@@ -141,7 +147,7 @@ for i in ${files_dp}; do
 			for j in $(cat "${name_fdp}"); do
 				for z in "" "-static"; do
 					repo-remove "${repo}.db.tar.gz" "${j}${z}" || true
-					del-all-pkg "${j//+/0}${z}"
+					del-all-pkg "$(fix-chars <<< ${j})${z}"
 				done
 			done
 			upload=true
@@ -156,7 +162,7 @@ done
 files_pkg=$(grep "\.pkg\." <<< "${sfpu_files}") || true
 for i in ${files_pkg}; do
 	if [[ "${i}" != *".pkg."*".sig" ]]; then
-		i2=$(sed 's/+/0/g' <<< "${i##*/}")
+		i2=$(fix-chars <<< "${i##*/}")
 		bucket="${SFPU}" get-object "${i}" "${i2}"
 		bucket="${SFPU}" get-object "${i}.sig" "${i2}.sig"
 		if gpg --verify "${i2}"{.sig,}; then
@@ -164,7 +170,7 @@ for i in ${files_pkg}; do
 			gpg --no-tty --pinentry-mode=loopback --passphrase "${PW_GPG}" --detach-sign --use-agent -u "${KEY_GPG}" --no-armor "${i2}"
 			repo-add "${repo}.db.tar.gz" "${i2}"
 			del-old-pkg "${i2}"
-			name_pkg=$(get_name "${i2}")
+			name_pkg=$(get-name "${i2}")
 			if ! grep -q '\-static' <<< "${name_pkg}"; then
 				repo-remove "${repo}.db.tar.gz" "${name_pkg}-static" || true
 				del-all-pkg "${name_pkg}-static"
