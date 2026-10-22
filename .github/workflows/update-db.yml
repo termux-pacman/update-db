@@ -21,38 +21,39 @@ concurrency:
 
 jobs:
   update-db:
-    runs-on: self-hosted #ubuntu-24.04
+    #runs-on: self-hosted
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        target_repo: [main__aarch64,
-                      main__arm,
-                      main__i686,
-                      main__x86_64,
-                      x11__aarch64,
-                      x11__arm,
-                      x11__i686,
-                      x11__x86_64,
-                      root__aarch64,
-                      root__arm,
-                      root__i686,
-                      root__x86_64,
-                      tur__aarch64,
-                      tur__arm,
-                      tur__i686,
-                      tur__x86_64,
-                      tur-continuous__aarch64,
-                      tur-continuous__arm,
-                      tur-continuous__i686,
-                      tur-continuous__x86_64,
-                      tur-multilib__aarch64,
-                      tur-multilib__arm,
-                      tur-multilib__i686,
-                      tur-multilib__x86_64,
-                      gpkg__aarch64,
-                      gpkg__arm,
-                      gpkg__x86_64,
-                      gpkg__i686,
-                      cgct__x86_64]
+        target_repo: [main@aarch64,
+                      main@arm,
+                      main@i686,
+                      main@x86_64,
+                      x11@aarch64,
+                      x11@arm,
+                      x11@i686,
+                      x11@x86_64,
+                      root@aarch64,
+                      root@arm,
+                      root@i686,
+                      root@x86_64,
+                      tur@aarch64,
+                      tur@arm,
+                      tur@i686,
+                      tur@x86_64,
+                      tur-continuous@aarch64,
+                      tur-continuous@arm,
+                      tur-continuous@i686,
+                      tur-continuous@x86_64,
+                      tur-multilib@aarch64,
+                      tur-multilib@arm,
+                      tur-multilib@i686,
+                      tur-multilib@x86_64,
+                      gpkg@aarch64,
+                      gpkg@arm,
+                      gpkg@x86_64,
+                      gpkg@i686,
+                      cgct@x86_64]
       fail-fast: false
     steps:
     - name: Clone repository
@@ -62,7 +63,7 @@ jobs:
         fetch-depth: 0
     - name: Set pacman tool for db
       if: runner.environment == 'github-hosted'
-      uses: termux-pacman/pacman-actions@v2.6
+      uses: termux-pacman/pacman-actions@v2.7
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v6.2.1
       with:
@@ -93,43 +94,44 @@ jobs:
           exit 1
         fi
         export UPDATE_RSYNC=false
-        source ./main.sh "${TARGET_REPO%%__*}" "${TARGET_REPO#*__}"
-        echo "UPDATE_RSYNC_${TARGET_REPO}=${UPDATE_RSYNC}" >> "$GITHUB_OUTPUT"
+        source ./main.sh "${TARGET_REPO%%@*}" "${TARGET_REPO#*@}"
+        echo "UPDATE_RSYNC_${repo}_${arch}=${UPDATE_RSYNC}" >> "$GITHUB_OUTPUT"
     - name: Clean
       if: runner.environment == 'self-hosted'
       run: rm -fr *
     outputs:
-      update_rsync_main__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__aarch64 }}
-      update_rsync_main__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__arm }}
-      update_rsync_main__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__i686 }}
-      update_rsync_main__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_main__x86_64 }}
-      update_rsync_x11__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__aarch64 }}
-      update_rsync_x11__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__arm }}
-      update_rsync_x11__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__i686 }}
-      update_rsync_x11__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11__x86_64 }}
-      update_rsync_root__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__aarch64 }}
-      update_rsync_root__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__arm }}
-      update_rsync_root__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__i686 }}
-      update_rsync_root__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_root__x86_64 }}
-      update_rsync_tur__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__aarch64 }}
-      update_rsync_tur__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__arm }}
-      update_rsync_tur__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__i686 }}
-      update_rsync_tur__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur__x86_64 }}
-      update_rsync_tur-continuous__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__aarch64 }}
-      update_rsync_tur-continuous__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__arm }}
-      update_rsync_tur-continuous__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__i686 }}
-      update_rsync_tur-continuous__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous__x86_64 }}
-      update_rsync_tur-multilib__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__aarch64 }}
-      update_rsync_tur-multilib__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__arm }}
-      update_rsync_tur-multilib__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__i686 }}
-      update_rsync_tur-multilib__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib__x86_64 }}
-      update_rsync_gpkg__aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__aarch64 }}
-      update_rsync_gpkg__arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__arm }}
-      update_rsync_gpkg__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__x86_64 }}
-      update_rsync_gpkg__i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg__i686 }}
-      update_rsync_cgct__x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_cgct__x86_64 }}
+      update_rsync_main_aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_main_aarch64 }}
+      update_rsync_main_arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_main_arm }}
+      update_rsync_main_i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_main_i686 }}
+      update_rsync_main_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_main_x86_64 }}
+      update_rsync_x11_aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11_aarch64 }}
+      update_rsync_x11_arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11_arm }}
+      update_rsync_x11_i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11_i686 }}
+      update_rsync_x11_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_x11_x86_64 }}
+      update_rsync_root_aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_root_aarch64 }}
+      update_rsync_root_arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_root_arm }}
+      update_rsync_root_i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_root_i686 }}
+      update_rsync_root_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_root_x86_64 }}
+      update_rsync_tur_aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur_aarch64 }}
+      update_rsync_tur_arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur_arm }}
+      update_rsync_tur_i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur_i686 }}
+      update_rsync_tur_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur_x86_64 }}
+      update_rsync_tur-continuous_aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous_aarch64 }}
+      update_rsync_tur-continuous_arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous_arm }}
+      update_rsync_tur-continuous_i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous_i686 }}
+      update_rsync_tur-continuous_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-continuous_x86_64 }}
+      update_rsync_tur-multilib_aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib_aarch64 }}
+      update_rsync_tur-multilib_arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib_arm }}
+      update_rsync_tur-multilib_i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib_i686 }}
+      update_rsync_tur-multilib_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_tur-multilib_x86_64 }}
+      update_rsync_gpkg_aarch64: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg_aarch64 }}
+      update_rsync_gpkg_arm: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg_arm }}
+      update_rsync_gpkg_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg_x86_64 }}
+      update_rsync_gpkg_i686: ${{ steps.update-db.outputs.UPDATE_RSYNC_gpkg_i686 }}
+      update_rsync_cgct_x86_64: ${{ steps.update-db.outputs.UPDATE_RSYNC_cgct_x86_64 }}
   update-rsync:
-    runs-on: self-hosted #ubuntu-24.04
+    #runs-on: self-hosted
+    runs-on: ubuntu-24.04
     needs: update-db
     steps:
     - name: Import crt

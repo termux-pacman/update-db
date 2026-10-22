@@ -124,7 +124,7 @@ sfpu_files=$(ls-files-s3 "${SFPU}" "${repo}/${arch}/")
 # Delete old packages
 bucket="${SFPU}" get-object "system-files/${repo}/${arch}/${oldpkgs}" "${oldpkgs}"
 for i in $(cat ${oldpkgs}); do
-	if (( (($(date +%s) - ${i#*===}) / 3600 ) > 12 )); then
+	if (( (($(date +%s) - ${i#*===}) / 3600 ) > 6 )); then
 		for j in $(grep "${i%%===*}" <<< "${files}"); do
 			aws-rm "${j}"
 		done
